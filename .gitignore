@@ -4,3 +4,4 @@ pip-selfcheck.json
 pyvenv.cfg
 share/
 *.pdf
+lib64

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 in_path = Path('extracted_https')
-out_path = Path('pdfs')
+out_path = Path('/data/atlassmallfiles/users/zgubic/thesis/pdfs')
 
 for fname in os.listdir(in_path):
     print(fname)
@@ -12,7 +12,7 @@ for fname in os.listdir(in_path):
             http = line.strip()
             pdfname = http.split('/')[-1]
 
-            already_have = os.path.exists(Path('pdfs')/pdfname)
+            already_have = os.path.exists(out_path/pdfname)
 
             if already_have:
                 print('already have {}'.format(pdfname))
@@ -20,4 +20,4 @@ for fname in os.listdir(in_path):
             else:
                 command = 'wget {}'.format(http)
                 os.system(command)
-                os.system('mv {} pdfs/{}'.format(pdfname, pdfname))
+                os.system('mv {} {}'.format(pdfname, out_path/pdfname))
