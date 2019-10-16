@@ -5,3 +5,4 @@ pyvenv.cfg
 share/
 *.pdf
 lib64
+*.txt
