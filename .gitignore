@@ -6,3 +6,5 @@ share/
 *.pdf
 lib64
 *.txt
+etc/
+notebooks/.ipynb_checkpoints
