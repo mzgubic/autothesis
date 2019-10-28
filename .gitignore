@@ -8,3 +8,5 @@ lib64
 *.txt
 etc/
 notebooks/.ipynb_checkpoints
+notebooks/a2
+notebooks/a4
