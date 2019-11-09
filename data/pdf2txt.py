@@ -50,7 +50,7 @@ def remove_failed_transcriptions(fname, out_fname):
     if size < 1000:
         os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
 
-def remove_nonenglish_theses(fname, out_fname):
+def remove_nonenglish_theses(fname, out_fname, english_words):
 
     try:
         with open(out_path/out_fname, 'r') as handle:
@@ -74,48 +74,55 @@ def remove_nonenglish_theses(fname, out_fname):
         os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
 
 
-# convert to txts
-english_words = set(nltk.corpus.words.words())
-for i, fname in enumerate(os.listdir(in_path)):
+
+def convert_to_text():
+
+    english_words = set(nltk.corpus.words.words())
+    for i, fname in enumerate(os.listdir(in_path)):
+        
+        # only look at pdfs
+        if not Path(fname).suffix == '.pdf':
+            continue
+        out_fname = Path(fname).with_suffix('.txt')
     
-    # only look at pdfs
-    if not Path(fname).suffix == '.pdf':
-        continue
-    out_fname = Path(fname).with_suffix('.txt')
+        print(fname)
+    
+        # if already done, don't bother
+        if (mid_path/out_fname).exists():
+            print('{} exists, not converting'.format(out_fname))
+        else:
+            # turn into text and remove empty lines
+            os.system('pdftotext {} {}'.format(in_path/fname, mid_path/out_fname))
+    
+        # do the postprocessing
+        with open(out_path/out_fname, 'w') as handle:
+    
+            try:
+                for j, line in enumerate(generate_lines(mid_path/out_fname)):
+                    line = line.strip()
+    
+                    keep = True
+                    keep = keep and has_3_or_more_spaces(line)
+                    keep = keep and is_not_toc(line)
+                    keep = keep and has_alphabet_majority(line)
+    
+                    if not keep:
+                        continue
+                    handle.write(line+'\n')
+    
+            except FileNotFoundError:
+                print('FileNotFoundError caught for {}'.format(fname))
+    
+        # remove failed transcriptions and non-english pdfs
+        remove_failed_transcriptions(fname, out_fname)
+        remove_nonenglish_theses(fname, out_fname, english_words)
+    
+        if i >= 100:
+            pass
+            #break
 
-    print(fname)
+def main():
+    convert_to_text()
 
-    # if already done, don't bother
-    if (mid_path/out_fname).exists():
-        print('{} exists, not converting'.format(out_fname))
-    else:
-        # turn into text and remove empty lines
-        os.system('pdftotext {} {}'.format(in_path/fname, mid_path/out_fname))
-
-    # do the postprocessing
-    with open(out_path/out_fname, 'w') as handle:
-
-        try:
-            for j, line in enumerate(generate_lines(mid_path/out_fname)):
-                line = line.strip()
-
-                keep = True
-                keep = keep and has_3_or_more_spaces(line)
-                keep = keep and is_not_toc(line)
-                keep = keep and has_alphabet_majority(line)
-
-                if not keep:
-                    continue
-                handle.write(line+'\n')
-
-        except FileNotFoundError:
-            print('FileNotFoundError caught for {}'.format(fname))
-
-    # remove failed transcriptions and non-english pdfs
-    remove_failed_transcriptions(fname, out_fname)
-    remove_nonenglish_theses(fname, out_fname)
-
-    if i >= 100:
-        pass
-        #break
-
+if __name__ == '__main__':
+    main()
