@@ -2,12 +2,13 @@ import os
 import time
 import string
 from pathlib import Path
+import nltk
+nltk.download('words')
 
 data_path = Path('/data/atlassmallfiles/users/zgubic/thesis')
 in_path = data_path / 'pdfs'
 mid_path = data_path / 'raw_txts'
 out_path = data_path / 'txts'
-
 
 def generate_lines(path):
     
@@ -43,8 +44,39 @@ def has_alphabet_majority(line):
 
     return True
 
+def remove_failed_transcriptions(fname, out_fname):
+    
+    size = os.path.getsize(out_path / out_fname)
+    if size < 1000:
+        os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
+
+def remove_nonenglish_theses(fname, out_fname):
+
+    try:
+        with open(out_path/out_fname, 'r') as handle:
+
+            # read the data and determine the fraction of english words
+            data = handle.read().replace('\n', ' ')
+            words = data.split()
+            half = int(len(words)/2)
+            N_total = len(words)
+            N_english = len([w for w in words if w.lower() in english_words])
+            fraction = N_english/(N_total+0.001)
+
+            # remove if smaller than 0.5 (manually selected value found by inspection)
+            # french have 0.4-0.5, english >0.55, german < 0.3, bad transcriptions < 0.15
+            if fraction < 0.5:
+                print(fraction)
+                print(words[half:half+40])
+                os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
+
+    except FileNotFoundError:
+        os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
+
+
 # convert to txts
-for fname in os.listdir(in_path):
+english_words = set(nltk.corpus.words.words())
+for i, fname in enumerate(os.listdir(in_path)):
     
     # only look at pdfs
     if not Path(fname).suffix == '.pdf':
@@ -52,7 +84,6 @@ for fname in os.listdir(in_path):
     out_fname = Path(fname).with_suffix('.txt')
 
     print(fname)
-    print(out_fname)
 
     # if already done, don't bother
     if (mid_path/out_fname).exists():
@@ -65,7 +96,7 @@ for fname in os.listdir(in_path):
     with open(out_path/out_fname, 'w') as handle:
 
         try:
-            for i, line in enumerate(generate_lines(mid_path/out_fname)):
+            for j, line in enumerate(generate_lines(mid_path/out_fname)):
                 line = line.strip()
 
                 keep = True
@@ -78,5 +109,13 @@ for fname in os.listdir(in_path):
                 handle.write(line+'\n')
 
         except FileNotFoundError:
-            continue
+            print('FileNotFoundError caught for {}'.format(fname))
+
+    # remove failed transcriptions and non-english pdfs
+    remove_failed_transcriptions(fname, out_fname)
+    remove_nonenglish_theses(fname, out_fname)
+
+    if i >= 100:
+        pass
+        #break
 
