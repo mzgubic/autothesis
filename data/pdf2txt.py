@@ -3,12 +3,12 @@ import time
 import string
 from pathlib import Path
 import nltk
+import utils
 nltk.download('words')
 
-data_path = Path('/data/atlassmallfiles/users/zgubic/thesis')
-in_path = data_path / 'pdfs'
-mid_path = data_path / 'raw_txts'
-out_path = data_path / 'txts'
+in_path = utils.data_path / 'pdfs'
+mid_path = utils.data_path / 'raw_txts'
+out_path = utils.data_path / 'txts'
 
 def generate_lines(path):
     
@@ -72,7 +72,6 @@ def remove_nonenglish_theses(fname, out_fname, english_words):
 
     except FileNotFoundError:
         os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
-
 
 
 def convert_to_text():

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 in_path = Path('extracted_https')
-out_path = Path('/data/atlassmallfiles/users/zgubic/thesis/pdfs')
+out_path = utils.data_path / 'pdfs'
 
 for fname in os.listdir(in_path):
     print(fname)

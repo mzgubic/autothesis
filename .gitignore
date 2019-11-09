@@ -6,6 +6,7 @@ share/
 *.pdf
 lib64
 *.txt
+*.pyc
 etc/
 notebooks/.ipynb_checkpoints
 notebooks/a2
