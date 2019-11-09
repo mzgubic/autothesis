@@ -11,8 +11,8 @@ source setup.sh
 
 ## Get and clean training data
 
-Download raw html of webpages with links to the pdfs from:
-https://cds.cern.ch/collection/ATLAS%20Theses?ln=en
+Download raw html of webpages with links to the pdfs from:  
+https://cds.cern.ch/collection/ATLAS%20Theses?ln=en  
 and put them in the raw_html folder.
 
 Skim thelines with links to the pdfs:
