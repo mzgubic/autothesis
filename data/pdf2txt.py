@@ -10,6 +10,7 @@ in_path = utils.data_path / 'pdfs'
 mid_path = utils.data_path / 'raw_txts'
 out_path = utils.data_path / 'txts'
 
+
 def generate_lines(path):
     
     with open(path, 'r') as handle:
@@ -74,6 +75,37 @@ def remove_nonenglish_theses(fname, out_fname, english_words):
         os.system('rm {} {} {}'.format(in_path/fname, mid_path/out_fname, out_path/out_fname))
 
 
+def get_all_chars():
+
+    # all characters
+    all_chars = set()
+    csets = []
+
+    # loop over all files and extract used characters
+    for fname in os.listdir(out_path):
+        print(fname)
+
+        with open(out_path/fname, 'r') as handle:
+            txt = handle.read()
+            these_chars = set(txt)
+            all_chars = all_chars.union(these_chars)
+            csets.append(these_chars)
+
+    # in how many theses do individual characters appear
+    counts = {c:0 for c in all_chars}
+    for cset in csets:
+        for c in cset:
+            counts[c] += 1
+
+    sorted_chars = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+
+    # only allow characters used in more than a third of the theses
+    N_theses = max(counts.values())
+    allowed_chars = [c for c in counts if counts[c] > N_theses/2.]
+
+    return allowed_chars
+
+
 def convert_to_text():
 
     english_words = set(nltk.corpus.words.words())
@@ -120,8 +152,21 @@ def convert_to_text():
             pass
             #break
 
+def remove_rare_characters(allowed_chars):
+
+    for i, fname in enumerate(os.listdir(in_path)):
+        
+        print(fname)
+
+    break
+    
+
 def main():
-    convert_to_text()
+
+    #convert_to_text()
+    allowed_chars = get_all_chars()
+    print(sorted(allowed_chars))
+    remove_rare_characters(allowed_chars)
 
 if __name__ == '__main__':
     main()
