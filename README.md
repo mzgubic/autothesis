@@ -11,14 +11,15 @@ pip install -r requirements.txt
 source setup.sh
 ```
 
-## Get and clean training data
+## Download training data
 
 Download raw html of webpages with links to the pdfs from:  
 https://cds.cern.ch/collection/ATLAS%20Theses?ln=en  
 and put them in the raw_html folder.
 
-Skim thelines with links to the pdfs:
+Skim the lines with links to the pdfs:
 ```
+cd ${SRC}/data
 . skim.sh
 ```
 
@@ -32,11 +33,14 @@ Download the pdf files
 python download.py
 ```
 
+## Clean and tokenise
+
 And then convert to text, and do some basic cleaning:
 - remove short lines (mostly text from figures)
 - remove table of content lines
 - remove non english documents
 ```
+cd ${SRC}/scripts
 python pdf2txt.py
 ```
 
