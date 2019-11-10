@@ -82,7 +82,7 @@ def get_all_chars():
     csets = []
 
     # loop over all files and extract used characters
-    for fname in os.listdir(out_path):
+    for i, fname in enumerate(os.listdir(out_path)):
         print(fname)
 
         with open(out_path/fname, 'r') as handle:
@@ -98,10 +98,11 @@ def get_all_chars():
             counts[c] += 1
 
     sorted_chars = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+    print(sorted_chars)
 
     # only allow characters used in more than a third of the theses
     N_theses = max(counts.values())
-    allowed_chars = [c for c in counts if counts[c] > N_theses/2.]
+    allowed_chars = {c for c in counts if counts[c] > N_theses/2.}
 
     return allowed_chars
 
@@ -154,19 +155,47 @@ def convert_to_text():
 
 def remove_rare_characters(allowed_chars):
 
-    for i, fname in enumerate(os.listdir(in_path)):
+    for i, fname in enumerate(os.listdir(out_path)):
         
         print(fname)
 
-    break
-    
+        # read all the lines
+        with open(out_path/fname, 'r') as handle:
+            lines = handle.readlines()
+
+        # write them back without the rare characters
+        with open(out_path/fname, 'w') as handle:
+            for line in lines:
+                these_chars = set(line)
+                non_allowed = these_chars - allowed_chars
+                if len(non_allowed) > 0:
+                    print(line[:-1])
+                    print(non_allowed)
+                    line = ''.join([c for c in line if c in allowed_chars])
+                handle.write(line)
+
+
+def combine_all():
+
+    lines = []
+    N_char = 0
+    for fname in os.listdir(out_path):
+        print(fname)
+        with open(out_path/fname, 'r') as handle:
+            these_lines = handle.readlines()
+            lines += these_lines
+
+    with open(out_path/'ZZZ_combined_theses.txt', 'w') as handle:
+        for line in lines:
+            handle.write(line)
 
 def main():
 
-    #convert_to_text()
+    convert_to_text()
     allowed_chars = get_all_chars()
-    print(sorted(allowed_chars))
     remove_rare_characters(allowed_chars)
+    combine_all()
+
 
 if __name__ == '__main__':
     main()

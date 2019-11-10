@@ -5,7 +5,9 @@ Sit back, relax, and let machines write your thesis.
 ## Set up the code and the environment
 ```
 git clone git@github.com:mzgubic/autothesis.git
+python3 -m venv autothesis
 cd autothesis
+pip install -r requirements.txt
 source setup.sh
 ```
 
@@ -30,7 +32,7 @@ Download the pdf files
 python download.py
 ```
 
-And then convert to text, and do dome basic cleaning:
+And then convert to text, and do some basic cleaning:
 - remove short lines (mostly text from figures)
 - remove table of content lines
 - remove non english documents
