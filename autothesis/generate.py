@@ -92,12 +92,11 @@ def main():
 
     token = 'character'
 
-    for batch, labels in generate('test', token=token, max_len=10, small=True):
+    for batch, labels in generate('test', token=token, max_len=10, small=False):
         print(batch, labels)
-        #print(int2str(batch, token))
-        #print(int2str(labels, token))
-        #print()
-        break
+        print(int2str(batch, token))
+        print(int2str(labels, token))
+        print()
 
 if __name__ == '__main__':
     main()
