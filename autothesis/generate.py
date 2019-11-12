@@ -90,9 +90,12 @@ def int2str(array, vocab):
 
 def one_hot_encode(array, vocab):
     
+    print(vocab[0])
+    print(len(vocab[0]))
+
     # flatten the original array
     in_shape = array.shape
-    new_dim = len(vocab[0])+1
+    new_dim = len(vocab[0])
     flat = array.reshape(-1)
     
     # create the encoded flat array
@@ -112,9 +115,6 @@ def one_hot_decode(array):
     decoded[indices[:-1]] = indices[-1]
 
     return decoded
-    
-    
-    
     
 
 def main():
