@@ -63,7 +63,7 @@ def get_vocab(token, small=False):
     return json_data['token_to_idx'], json_data['idx_to_token']
 
 
-def int2str(array, token):
+def int2str(array, vocab):
     """
     Transform the array of indices in an array of tokens.
 
@@ -75,8 +75,8 @@ def int2str(array, token):
         text (np.array (str)): array of tokens corresponding to indices
     """
 
-    # get the vocabulary
-    _, i2t = get_vocab(token)
+    # get the dicts
+    _, i2t = vocab
 
     # convert to string array
     array = np.array(array)
@@ -86,17 +86,58 @@ def int2str(array, token):
     text = decode(text)
 
     return text
+
+
+def one_hot_encode(array, vocab):
+    
+    # flatten the original array
+    in_shape = array.shape
+    new_dim = len(vocab[0])+1
+    flat = array.reshape(-1)
+    
+    # create the encoded flat array
+    encoded = np.zeros(shape=(*array.shape, new_dim))
+    encoded = encoded.reshape((-1, new_dim))
+    encoded[np.arange(flat.size), flat] = 1
+
+    # reshape encoded array to original shape
+    encoded = encoded.reshape((*in_shape, new_dim))
+
+    return encoded
+
+def one_hot_decode(array):
+
+    decoded = np.zeros(array.shape[:-1], dtype=int)
+    indices = np.nonzero(array)
+    decoded[indices[:-1]] = indices[-1]
+
+    return decoded
+    
+    
+    
     
 
 def main():
 
+    max_len = 5
     token = 'character'
+    small = True
+    vocab = get_vocab(token, small)
 
-    for batch, labels in generate('test', token=token, max_len=10, small=False):
-        print(batch, labels)
-        print(int2str(batch, token))
-        print(int2str(labels, token))
+    for batch, labels in generate('test', token=token, max_len=5, small=small):
+        #print(batch, labels)
+        #print(int2str(batch, vocab))
+        #print(int2str(labels, vocab))
+        #one_hot_encode(labels, vocab)
+
+        one_hot_batch = one_hot_encode(batch, vocab)
+        new_batch = one_hot_decode(one_hot_batch)
+
+        one_hot_labels = one_hot_encode(labels, vocab)
+        new_labels = one_hot_decode(one_hot_labels)
+        
         print()
+        break
 
 if __name__ == '__main__':
     main()
