@@ -23,7 +23,7 @@ def generate(split, token, batch_size=8, max_len=4, small=False):
     # load the numpy array
     data_path = utils.data_path/'tokens'/token
 
-    with h5py.File(data_path/'{}tokens.h5'.format('small_' if small else ''), 'r') as handle:
+    with h5py.File(data_path/'{}_tokens.h5'.format('small' if small else 'full'), 'r') as handle:
         seq = np.array(handle[split])
 
     # sample the subparts
@@ -67,6 +67,10 @@ class Vocab():
         else:
             raise TypeError('Vocabulary can be indexed either by tokens or indices, not by {}'.format(key))
 
+    def __repr__(self):
+        
+        return 'Vocab({})'.format(self.t2i)
+
 
 
 def get_vocab(token, small=False):
@@ -84,7 +88,7 @@ def get_vocab(token, small=False):
 
     # get the file
     data_path = utils.data_path/'tokens'/token
-    with open(data_path/'{}_vocab.pkl'.format('small' if small else ''), 'rb') as f:
+    with open(data_path/'{}_vocab.pkl'.format('small' if small else 'full'), 'rb') as f:
         vocab = pickle.load(f)
     
     return vocab
@@ -113,7 +117,7 @@ def int2str(array, vocab):
 
 
 def one_hot_encode(array, vocab):
-    
+
     # flatten the original array
     in_shape = array.shape
     new_dim = vocab.size

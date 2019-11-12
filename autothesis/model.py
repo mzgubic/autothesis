@@ -37,8 +37,9 @@ if __name__ == '__main__':
     # settings
     token = 'character'
     max_len = 5
-    small = True
-    vocab = generate.get_vocab(token, small=True)
+    small = False
+    total_n = 5000
+    vocab = generate.get_vocab(token, small=small)
 
     # build the model
     model = CharacterRNN(token, vocab)
@@ -48,16 +49,13 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # training loop
+    every_n = int(total_n/50)
     running_loss = 0
     losses = []
     for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
 
-        #print()
-        #print(batch, labels)
-
         # one hot encode
         batch = generate.one_hot_encode(batch, vocab)
-        #labels = generate.one_hot_encode(labels, vocab)
 
         # turn into torch tensors
         batch = torch.Tensor(batch)
@@ -74,12 +72,12 @@ if __name__ == '__main__':
 
         # monitor the losses
         running_loss += loss
-        every_n = 10
         if i % every_n == 0:
+            print('{}/{} done'.format(i, total_n))
             losses.append(running_loss/every_n)
             running_loss = 0
 
-        if i >= 5000:
+        if i >= total_n:
             break
     
     fig, ax = plt.subplots()
