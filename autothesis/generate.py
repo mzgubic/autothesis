@@ -1,5 +1,5 @@
 import numpy as np
-import json
+import pickle
 import h5py
 import utils
 
@@ -42,6 +42,33 @@ def generate(split, token, batch_size=8, max_len=4, small=False):
         yield batch, labels
 
 
+class Vocab():
+    
+    def __init__(self, token_to_idx):
+
+        self.t2i = token_to_idx
+        self.i2t = {token_to_idx[k]:k for k in token_to_idx}
+        self.size = len(token_to_idx)
+
+    def __getitem__(self, key):
+        
+        # token to index
+        if type(key) == str:
+            try:
+                return self.t2i[key]
+            except KeyError:
+                return self.t2i['<unk>']
+
+        # or index to token
+        elif type(key) == int:
+            return self.i2t[key]
+
+        # but nothing else
+        else:
+            raise TypeError('Vocabulary can be indexed either by tokens or indices, not by {}'.format(key))
+
+
+
 def get_vocab(token, small=False):
     """
     Get the vocabulary
@@ -57,10 +84,10 @@ def get_vocab(token, small=False):
 
     # get the file
     data_path = utils.data_path/'tokens'/token
-    with open(data_path/'{}dicts.json'.format('small_' if small else ''), 'r') as f:
-        json_data = json.load(f)
+    with open(data_path/'{}_vocab.pkl'.format('small' if small else ''), 'rb') as f:
+        vocab = pickle.load(f)
     
-    return json_data['token_to_idx'], json_data['idx_to_token']
+    return vocab
 
 
 def int2str(array, vocab):
@@ -75,14 +102,11 @@ def int2str(array, vocab):
         text (np.array (str)): array of tokens corresponding to indices
     """
 
-    # get the dicts
-    _, i2t = vocab
-
     # convert to string array
     array = np.array(array)
     text = array.astype(str)
 
-    decode = np.vectorize(lambda x: i2t[x])
+    decode = np.vectorize(lambda x: vocab[int(x)])
     text = decode(text)
 
     return text
@@ -90,12 +114,9 @@ def int2str(array, vocab):
 
 def one_hot_encode(array, vocab):
     
-    print(vocab[0])
-    print(len(vocab[0]))
-
     # flatten the original array
     in_shape = array.shape
-    new_dim = len(vocab[0])
+    new_dim = vocab.size
     flat = array.reshape(-1)
     
     # create the encoded flat array
@@ -119,22 +140,25 @@ def one_hot_decode(array):
 
 def main():
 
-    max_len = 5
+    max_len = 10
     token = 'character'
     small = True
     vocab = get_vocab(token, small)
 
-    for batch, labels in generate('test', token=token, max_len=5, small=small):
-        #print(batch, labels)
-        #print(int2str(batch, vocab))
-        #print(int2str(labels, vocab))
-        #one_hot_encode(labels, vocab)
+    for batch, labels in generate('train', token=token, max_len=max_len, small=small):
+        print(batch)
+        print(labels)
+        print(int2str(batch, vocab))
+        print(int2str(labels, vocab))
+        one_hot_encode(labels, vocab)
 
         one_hot_batch = one_hot_encode(batch, vocab)
         new_batch = one_hot_decode(one_hot_batch)
 
         one_hot_labels = one_hot_encode(labels, vocab)
         new_labels = one_hot_decode(one_hot_labels)
+        print(new_batch)
+        print(new_labels)
         
         print()
         break
