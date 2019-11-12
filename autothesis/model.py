@@ -31,14 +31,78 @@ class CharacterRNN(nn.Module):
 
         return output
 
+    def str2batch(self, intxt):
+        """
+        Turn a string of characters to a batch ready to be processed.
+
+        Arguments:
+            intxt (string): string to be translated
+
+        Returns:
+            batch (torch.Tensor): (1, len(intxt), vocab_size)
+        """
+
+        inds = np.array([self.vocab[char] for char in intxt])
+        inds = generate.one_hot_encode(inds, self.vocab)
+        batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
+        return batch
+
+    #def batch2str(self, batch):
+    #    """
+    #    Turn a batch in a readable string
+
+    #    Arguments:
+    #        batch (torch.Tensor): (1, len(intxt), vocab_size)
+
+    #    Returns:
+    #        intxt (string): string to be translated
+    #    """
+
+    def compose(self, intxt, temperature, how_many):
+        """
+        Continue the paragraph given starting text.
+
+        Arguments:
+            intxt (string):      string to be continued by the model
+            temperature (float): "temperature" which adds uncertainty to sampling
+            how_many (int):      how many characters to add
+
+        Returns:
+            txt (string):        continued string
+        """
+            
+        txt = intxt
+
+        # predict new characters
+        for i in range(how_many):
+
+            # output of the network
+            batch = self.str2batch(txt)
+            output = self(batch)
+    
+            # construct the distribution
+            distribution = F.softmax(output/temperature, dim=1).detach().numpy().flatten()
+    
+            # and sample from it
+            sample = np.random.choice(np.arange(self.vocab.size), p=distribution)
+            new_char = self.vocab[int(sample)]
+            txt = txt+new_char
+
+        return txt
+
 
 if __name__ == '__main__':
 
     # settings
     token = 'character'
-    max_len = 5
+    max_len = 20
     small = False
-    total_n = 1000
+
+    # training and sampling
+    total_n = 1000000
+    temperature = 0.5
+    how_many = 50
+
     vocab = generate.get_vocab(token, small=small)
 
     # build the model
@@ -49,7 +113,7 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # training loop
-    every_n = int(total_n/50)
+    every_n = int(total_n/100)
     running_loss = 0
     losses = []
     for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
@@ -76,6 +140,7 @@ if __name__ == '__main__':
             print('{}/{} done'.format(i+1, total_n))
             losses.append(running_loss/every_n)
             running_loss = 0
+            print(model.compose('The Standard Model of pa', temperature, how_many))
 
         if i >= total_n:
             break
