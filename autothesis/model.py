@@ -38,7 +38,7 @@ if __name__ == '__main__':
     token = 'character'
     max_len = 5
     small = False
-    total_n = 5000
+    total_n = 1000
     vocab = generate.get_vocab(token, small=small)
 
     # build the model
@@ -72,8 +72,8 @@ if __name__ == '__main__':
 
         # monitor the losses
         running_loss += loss
-        if i % every_n == 0:
-            print('{}/{} done'.format(i, total_n))
+        if i % every_n == (every_n-1):
+            print('{}/{} done'.format(i+1, total_n))
             losses.append(running_loss/every_n)
             running_loss = 0
 
@@ -84,6 +84,7 @@ if __name__ == '__main__':
     ax.plot(np.arange(len(losses))*every_n, losses, label='training loss')
     ax.set_xlabel('training step')
     ax.set_ylabel('loss')
+    ax.set_ylim(0, ax.get_ylim()[1])
     ax.legend()
     plt.savefig('losses.pdf')
 
