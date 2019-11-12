@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import numpy as np
+import matplotlib.pyplot as plt
 
 import utils
 import generate
@@ -46,6 +48,8 @@ if __name__ == '__main__':
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # training loop
+    running_loss = 0
+    losses = []
     for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
 
         #print()
@@ -69,10 +73,20 @@ if __name__ == '__main__':
         optimizer.step()
 
         # monitor the losses
+        running_loss += loss
+        every_n = 10
+        if i % every_n == 0:
+            losses.append(running_loss/every_n)
+            running_loss = 0
 
-
-
-
-        if i >= 5:
+        if i >= 5000:
             break
+    
+    fig, ax = plt.subplots()
+    ax.plot(np.arange(len(losses))*every_n, losses, label='training loss')
+    ax.set_xlabel('training step')
+    ax.set_ylabel('loss')
+    ax.legend()
+    plt.savefig('losses.pdf')
+
 
