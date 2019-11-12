@@ -15,20 +15,19 @@ class CharacterRNN(nn.Module):
         self.vocab = vocab
 
         # embedding parameters
-        self.vocab_size = len(vocab[0])
-        self.input_size = self.vocab_size
+        self.input_size = self.vocab.size
         self.hidden_size = 64
 
         # layers
         self.rnn = torch.nn.RNN(self.input_size, self.hidden_size, batch_first=True)
-        self.dense = torch.nn.Linear(self.hidden_size, self.vocab_size)
+        self.dense = torch.nn.Linear(self.hidden_size, self.vocab.size)
 
     def forward(self, x):
 
-        x = self.rnn(x)
-        x = F.relu(self.dense(x))
+        rnn_output, h = self.rnn(x)
+        output = torch.squeeze(self.dense(h), dim=0)
 
-        return x
+        return output
 
 
 if __name__ == '__main__':
@@ -49,23 +48,28 @@ if __name__ == '__main__':
     # training loop
     for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
 
-        print()
-        print(batch, labels)
+        #print()
+        #print(batch, labels)
 
         # one hot encode
         batch = generate.one_hot_encode(batch, vocab)
-        labels = generate.one_hot_encode(labels, vocab)
+        #labels = generate.one_hot_encode(labels, vocab)
 
         # turn into torch tensors
         batch = torch.Tensor(batch)
-        print(batch)
+        labels = torch.Tensor(labels).long()
 
         # zero the gradients
         optimizer.zero_grad()
 
         # forward and backward pass and optimisation step
         outputs = model(batch)
-        print(outputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        # monitor the losses
+
 
 
 
