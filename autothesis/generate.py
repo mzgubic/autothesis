@@ -26,8 +26,15 @@ def generate(split, token, batch_size=8, max_len=4, small=False):
     with h5py.File(data_path/'{}_tokens.h5'.format('small' if small else 'full'), 'r') as handle:
         seq = np.array(handle[split])
 
+    # exhaust iterator after one epoch: when the number of yielded characters is the total number of characters
+    per_batch = batch_size * max_len
+    total = len(seq)
+    n_batches = int(total/per_batch)
+
+    print('Generator will yield {} batches before exhausting'.format(n_batches))
+
     # sample the subparts
-    while True:
+    for _ in range(n_batches):
 
         # create arrays
         batch = np.zeros((batch_size, max_len), dtype=int)
@@ -144,27 +151,24 @@ def one_hot_decode(array):
 
 def main():
 
-    max_len = 10
+    max_len = 20
     token = 'character'
-    small = True
+    small = False
     vocab = get_vocab(token, small)
 
     for batch, labels in generate('train', token=token, max_len=max_len, small=small):
         print(batch)
-        print(labels)
-        print(int2str(batch, vocab))
-        print(int2str(labels, vocab))
-        one_hot_encode(labels, vocab)
-
-        one_hot_batch = one_hot_encode(batch, vocab)
-        new_batch = one_hot_decode(one_hot_batch)
-
-        one_hot_labels = one_hot_encode(labels, vocab)
-        new_labels = one_hot_decode(one_hot_labels)
-        print(new_batch)
-        print(new_labels)
+        #print(labels)
+        #print(int2str(batch, vocab))
+        #print(int2str(labels, vocab))
+        #one_hot_batch = one_hot_encode(batch, vocab)
+        #new_batch = one_hot_decode(one_hot_batch)
+        #one_hot_labels = one_hot_encode(labels, vocab)
+        #new_labels = one_hot_decode(one_hot_labels)
+        #print(new_batch)
+        #print(new_labels)
         
-        print()
+        print('new batch')
         break
 
 if __name__ == '__main__':
