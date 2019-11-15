@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import os
+import time
 import pickle
 import argparse
 import numpy as np
@@ -23,7 +24,6 @@ if __name__ == '__main__':
     # training and sampling
     temperature = 0.5
     how_many = 50
-
     vocab = generate.get_vocab(args.token, small=args.small)
 
     # build the model
@@ -53,6 +53,7 @@ if __name__ == '__main__':
     running_loss = 0
     training_losses = []
     valid_losses = []
+    t0 = time.time()
     for i, (batch, labels) in enumerate(generate.generate('train', token=args.token, max_len=args.max_len, small=args.small)):
 
         # one hot encode
@@ -93,19 +94,20 @@ if __name__ == '__main__':
                 with open(model_dir/'out_stream.txt', 'a') as handle:
                     handle.write(m+'\n')
 
-
         if i >= args.n_steps:
             break
     
     # save the losses
-    loss_dict = {'train':training_losses, 'valid':valid_losses}
+    time_per_step = (time.time() - t0) / args.n_steps
+    print('tiem per step: {}'.format(time_per_step))
+    loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_per_step':time_per_step}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
 
     # save the settings
     settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
                 'n_steps':args.n_steps, 'every_n':every_n}
     pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
-    
+
     # evaluate
     evaluate.plot_losses(model_dir)
 
