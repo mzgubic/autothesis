@@ -40,10 +40,19 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
+    # create the validation set
+    n_valid = 10000
+    valid_gen = generate.generate('val', token=args.token, max_len=args.max_len, small=args.small, batch_size=n_valid)
+    for valid_batch, valid_labels in valid_gen:
+        valid_batch = generate.one_hot_encode(valid_batch, vocab)
+        valid_batch, valid_labels = torch.Tensor(valid_batch), torch.Tensor(valid_labels).long()
+        break
+
     # training loop
     every_n = int(args.n_steps/100)
     running_loss = 0
     training_losses = []
+    valid_losses = []
     for i, (batch, labels) in enumerate(generate.generate('train', token=args.token, max_len=args.max_len, small=args.small)):
 
         # one hot encode
@@ -65,8 +74,14 @@ if __name__ == '__main__':
         # monitor the losses
         running_loss += loss
         if i % every_n == (every_n-1):
-            training_losses.append(running_loss/every_n)
+
+            # append the training losses
+            training_losses.append(float(running_loss/every_n))
             running_loss = 0
+
+            # compute the valid loss
+            valid_outputs = model(valid_batch)
+            valid_losses.append(float(criterion(valid_outputs, valid_labels)))
 
             # monitor progress
             monitor = ['\n{}/{} done'.format(i+1, args.n_steps)]
@@ -75,14 +90,17 @@ if __name__ == '__main__':
             monitor.append(model.compose('arxiv.', temperature, how_many))
             for m in monitor:
                 print(m)
-                os.system('echo "{}" >> {}'.format(m, model_dir/'out_stream.txt'))
+                with open(model_dir/'out_stream.txt', 'a') as handle:
+                    handle.write(m+'\n')
 
 
         if i >= args.n_steps:
             break
     
     # save the losses
-    pickle.dump({'training_losses':training_losses}, open(model_dir/ 'losses.pkl', 'wb'))
+    loss_dict = {'training_losses':training_losses, 'valid_losses':valid_losses}
+    pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
+    settings = {}
     
 
     #fig, ax = plt.subplots()
