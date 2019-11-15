@@ -5,8 +5,8 @@ import os
 import pickle
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 import generate
+import evaluate
 import utils
 from model import CharacterRNN
 
@@ -98,17 +98,14 @@ if __name__ == '__main__':
             break
     
     # save the losses
-    loss_dict = {'training_losses':training_losses, 'valid_losses':valid_losses}
+    loss_dict = {'train':training_losses, 'valid':valid_losses}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
-    settings = {}
+
+    # save the settings
+    settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
+                'n_steps':args.n_steps, 'every_n':every_n}
+    pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
     
-
-    #fig, ax = plt.subplots()
-    #ax.plot(np.arange(len(losses))*every_n, losses, label='training loss')
-    #ax.set_xlabel('training step')
-    #ax.set_ylabel('loss')
-    #ax.set_ylim(0, ax.get_ylim()[1])
-    #ax.legend()
-    #plt.savefig('Losses.pdf')
-
+    # evaluate
+    evaluate.plot_losses(model_dir)
 
