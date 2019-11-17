@@ -32,9 +32,8 @@ if __name__ == '__main__':
     # directory housekeeping
     model_dir = utils.model_dir_name(type(model).__name__, args.token, args.max_len, args.n_steps)
     if os.path.exists(model_dir) and args.force:
-        os.system('rm -r {}/*'.format(model_dir))
-    else:
-        os.makedirs(model_dir)
+        os.system('rm -r {}'.format(model_dir))
+    os.makedirs(model_dir/'checkpoints')
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
@@ -93,6 +92,12 @@ if __name__ == '__main__':
                 print(m)
                 with open(model_dir/'out_stream.txt', 'a') as handle:
                     handle.write(m+'\n')
+            
+            # save the model
+            torch.save(model.state_dict(), model_dir/'checkpoints'/'step_{}.pt'.format(i))
+            #model = TheModelClass(*args, **kwargs)
+            #model.load_state_dict(torch.load(PATH))
+            #model.eval()
 
         if i >= args.n_steps:
             break
