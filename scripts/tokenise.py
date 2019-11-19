@@ -60,7 +60,7 @@ if __name__ == '__main__':
     # numpy arrays
     with h5py.File(out_path/'{}_tokens.h5'.format('small' if args.small else 'full'), 'w') as f:
         f.create_dataset('train', data=train)
-        f.create_dataset('val', data=val)
+        f.create_dataset('valid', data=val)
         f.create_dataset('test', data=test)
 
     # easy to read vocab

@@ -1,30 +1,76 @@
+import os
 import argparse
+import torch
+import torch.nn as nn
 import numpy as np
 import matplotlib as mpl
 mpl.use('agg')
 import matplotlib.pyplot as plt
 import pickle
+import generate
+from model import CharacterRNN
 from pathlib import Path
 
 def plot_losses(loc):
 
     # load data
     model_dir = Path(loc)
-    loss = pickle.load(open(model_dir/'losses.pkl', 'rb'))
     settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
 
-    # prepare
+    # settings 
     every_n = settings['every_n']
+    token = settings['token']
+    small = settings['small']
+    max_len = settings['max_len']
+    criterion = nn.CrossEntropyLoss()
 
-    # plot
-    fig, ax = plt.subplots()
-    ax.plot(np.arange(len(loss['train']))*every_n, loss['train'], label='training loss')
-    ax.plot(np.arange(len(loss['valid']))*every_n, loss['valid'], label='validation loss')
-    ax.set_xlabel('training step')
-    ax.set_ylabel('loss')
-    ax.set_ylim(0, ax.get_ylim()[1])
-    ax.legend()
-    plt.savefig(model_dir/'Losses.pdf')
+    # load the models
+    models = []
+    for fname in os.listdir(model_dir/'checkpoints'):
+        vocab = generate.get_vocab(token, settings['small'])
+        model = CharacterRNN(token, vocab)
+        model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
+        model.eval()
+        models.append(model)
+
+    # prepare training and validation sets
+    N = 10000
+    splits = ['train', 'valid']
+    gens = {split:generate.generate(split, token=token, max_len=max_len, small=small, batch_size=N) for split in splits}
+    batch, labels = {}, {}
+    for split in splits:
+        for b, l in gens[split]:
+            b = generate.one_hot_encode(b, vocab)
+            batch[split], labels[split] = torch.Tensor(b), torch.Tensor(l).long()
+            break
+
+    # evaluate the models
+    loss = {split:[] for split in splits}
+    acc = {split:[] for split in splits}
+    for i, model in enumerate(models):
+        print(i)
+        for split in splits:
+            # loss
+            outputs = model(batch[split])
+            l = criterion(outputs, labels[split])
+            loss[split].append(l)
+            # accuracy
+            _, preds = torch.max(outputs, 1)
+            acc[split].append(sum(preds==labels[split]) / float(N))
+
+    # plot both quantities
+    for quantity, description in zip([loss, acc], ['Loss', 'Accuracy']):
+        fig, ax = plt.subplots()
+        for split in splits:
+            ax.plot((1+np.arange(len(quantity[split])))*every_n, quantity[split], label=split)
+        ax.set_xlabel('Training step')
+        ax.set_ylabel(description)
+        upper = ax.get_ylim()[1] if description == 'Loss' else 1
+        ax.set_ylim(0, upper)
+        ax.set_xlim(0, ax.get_xlim()[1])
+        ax.legend()
+        ax.grid(alpha=0.5, which='both')
+        plt.savefig(model_dir/'{}.pdf'.format(description))
 
 if __name__ == '__main__':
     

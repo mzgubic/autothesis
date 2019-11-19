@@ -41,18 +41,24 @@ if __name__ == '__main__':
 
     # create the validation set
     n_valid = 10000
-    valid_gen = generate.generate('val', token=args.token, max_len=args.max_len, small=args.small, batch_size=n_valid)
+    valid_gen = generate.generate('valid', token=args.token, max_len=args.max_len, small=args.small, batch_size=n_valid)
     for valid_batch, valid_labels in valid_gen:
         valid_batch = generate.one_hot_encode(valid_batch, vocab)
         valid_batch, valid_labels = torch.Tensor(valid_batch), torch.Tensor(valid_labels).long()
         break
 
-    # training loop
+    # training settings
     every_n = int(args.n_steps/100)
     running_loss = 0
     training_losses = []
     valid_losses = []
     t0 = time.time()
+ 
+    # save the settings
+    settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
+                'n_steps':args.n_steps, 'every_n':every_n}
+    pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
+
     for i, (batch, labels) in enumerate(generate.generate('train', token=args.token, max_len=args.max_len, small=args.small)):
 
         # one hot encode
@@ -86,8 +92,9 @@ if __name__ == '__main__':
             # monitor progress
             monitor = ['\n{}/{} done'.format(i+1, args.n_steps)]
             monitor.append(model.compose('The Standard Model of pa', temperature, how_many))
-            monitor.append(model.compose('[23] Aad G', temperature, how_many))
-            monitor.append(model.compose('arxiv.', temperature, how_many))
+            monitor.append(model.compose('[23] ATLAS', temperature, how_many))
+            monitor.append(model.compose('[15] S. Weinberg, A Model of Leptons', temperature, how_many))
+            monitor.append(model.compose('s = 8', temperature, how_many))
             for m in monitor:
                 print(m)
                 with open(model_dir/'out_stream.txt', 'a') as handle:
@@ -95,23 +102,15 @@ if __name__ == '__main__':
             
             # save the model
             torch.save(model.state_dict(), model_dir/'checkpoints'/'step_{}.pt'.format(i))
-            #model = TheModelClass(*args, **kwargs)
-            #model.load_state_dict(torch.load(PATH))
-            #model.eval()
 
         if i >= args.n_steps:
             break
     
     # save the losses
     time_per_step = (time.time() - t0) / args.n_steps
-    print('tiem per step: {}'.format(time_per_step))
+    print('time per step: {}'.format(time_per_step))
     loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_per_step':time_per_step}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
-
-    # save the settings
-    settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
-                'n_steps':args.n_steps, 'every_n':every_n}
-    pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
 
     # evaluate
     evaluate.plot_losses(model_dir)
