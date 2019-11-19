@@ -4,6 +4,9 @@ from pathlib import Path
 data_path = Path(os.getenv('DATA'))
 src_path = Path(os.getenv('SRC'))
 
-def model_dir_name(cls_name, token, max_len, n_steps):
+def model_dir_name(cls_name, settings):
 
-    return data_path / 'run' / token / '{}_{}_{}steps'.format(cls_name, max_len, n_steps)
+    relevant_keys = ['hidden_size', 'learning_rate', 'n_steps', 'batch_size', 'max_len']
+    folder_name = cls_name + '__' + '__'.join(['{}{}'.format(k, settings[k]) for k in relevant_keys])
+
+    return data_path / 'run' / settings['token'] / folder_name

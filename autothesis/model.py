@@ -10,15 +10,14 @@ import generate
 
 class CharacterRNN(nn.Module):
 
-    def __init__(self, token, vocab):
+    def __init__(self, hidden_size, vocab):
 
         super(CharacterRNN, self).__init__()
-        self.token = token
         self.vocab = vocab
 
         # embedding parameters
         self.input_size = self.vocab.size
-        self.hidden_size = 64
+        self.hidden_size = hidden_size
 
         # layers
         self.rnn = torch.nn.RNN(self.input_size, self.hidden_size, batch_first=True)
@@ -46,17 +45,6 @@ class CharacterRNN(nn.Module):
         inds = generate.one_hot_encode(inds, self.vocab)
         batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
         return batch
-
-    #def batch2str(self, batch):
-    #    """
-    #    Turn a batch in a readable string
-
-    #    Arguments:
-    #        batch (torch.Tensor): (1, len(intxt), vocab_size)
-
-    #    Returns:
-    #        intxt (string): string to be translated
-    #    """
 
     def compose(self, intxt, temperature, how_many):
         """
@@ -96,6 +84,7 @@ if __name__ == '__main__':
     # settings
     token = 'character'
     max_len = 20
+    hidden_size = 16
     small = False
 
     # training and sampling
@@ -106,7 +95,7 @@ if __name__ == '__main__':
     vocab = generate.get_vocab(token, small=small)
 
     # build the model
-    model = CharacterRNN(token, vocab)
+    model = CharacterRNN(hidden_size, vocab)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()

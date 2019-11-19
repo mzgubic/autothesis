@@ -14,6 +14,9 @@ from model import CharacterRNN
 parser = argparse.ArgumentParser()
 parser.add_argument('--token', default='character', choices=['character', 'word'])
 parser.add_argument('--max-len', type=int, default=20)
+parser.add_argument('--hidden-size', type=int, default=64)
+parser.add_argument('--batch-size', type=int, default=64)
+parser.add_argument('--learning-rate', type=float, default=0.001)
 parser.add_argument('--small', action='store_true')
 parser.add_argument('--n-steps', type=int, default=1000)
 parser.add_argument('--force', action='store_true')
@@ -27,17 +30,11 @@ if __name__ == '__main__':
     vocab = generate.get_vocab(args.token, small=args.small)
 
     # build the model
-    model = CharacterRNN(args.token, vocab)
-
-    # directory housekeeping
-    model_dir = utils.model_dir_name(type(model).__name__, args.token, args.max_len, args.n_steps)
-    if os.path.exists(model_dir) and args.force:
-        os.system('rm -r {}'.format(model_dir))
-    os.makedirs(model_dir/'checkpoints')
+    model = CharacterRNN(args.hidden_size, vocab)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     # create the validation set
     n_valid = 10000
@@ -56,10 +53,22 @@ if __name__ == '__main__':
  
     # save the settings
     settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
-                'n_steps':args.n_steps, 'every_n':every_n}
+                'n_steps':args.n_steps, 'every_n':every_n, 'hidden_size':args.hidden_size,
+                'batch_size':args.batch_size, 'learning_rate':args.learning_rate}
+
+    # directory housekeeping
+    model_dir = utils.model_dir_name(type(model).__name__, settings)
+    if os.path.exists(model_dir) and args.force:
+        os.system('rm -r {}'.format(model_dir))
+    os.makedirs(model_dir/'checkpoints')
+
+    # dump the settings
     pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
 
-    for i, (batch, labels) in enumerate(generate.generate('train', token=args.token, max_len=args.max_len, small=args.small)):
+    # run the training loop
+    train_gen = generate.generate('train', token=args.token, max_len=args.max_len,
+                                  small=args.small, batch_size=args.batch_size)
+    for i, (batch, labels) in enumerate(train_gen):
 
         # one hot encode
         batch = generate.one_hot_encode(batch, vocab)

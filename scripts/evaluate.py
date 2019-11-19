@@ -28,7 +28,7 @@ def plot_losses(loc):
     models = []
     for fname in os.listdir(model_dir/'checkpoints'):
         vocab = generate.get_vocab(token, settings['small'])
-        model = CharacterRNN(token, vocab)
+        model = CharacterRNN(64, vocab)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
         models.append(model)
@@ -90,7 +90,7 @@ def freestyle(loc):
     for i, fname in enumerate(os.listdir(model_dir/'checkpoints')):
 
         # load the model
-        model = CharacterRNN(token, vocab)
+        model = CharacterRNN(64, vocab)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
 
