@@ -72,10 +72,47 @@ def plot_losses(loc):
         ax.grid(alpha=0.5, which='both')
         plt.savefig(model_dir/'{}.pdf'.format(description))
 
+def freestyle(loc):
+
+    # load data
+    model_dir = Path(loc)
+    settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
+
+    # settings 
+    token = settings['token']
+    n_steps = settings['n_steps']
+    every_n = settings['every_n']
+    how_many = 100
+    temperature = 0.5
+
+    # load the models
+    vocab = generate.get_vocab(token, settings['small'])
+    for i, fname in enumerate(os.listdir(model_dir/'checkpoints')):
+
+        # load the model
+        model = CharacterRNN(token, vocab)
+        model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
+        model.eval()
+
+        # monitor progress
+        monitor = ['\n{}/{} '.format((i+1)*every_n, n_steps)]
+        monitor.append(model.compose('The Standard Mo', temperature, how_many))
+        monitor.append(model.compose('[23] ATLAS Co', temperature, how_many))
+        monitor.append(model.compose('[15] S. Wein', temperature, how_many))
+        monitor.append(model.compose('s = ', temperature, how_many))
+        for m in monitor:
+            print(m)
+            #with open(model_dir/'out_stream.txt', 'a') as handle:
+            #    handle.write(m+'\n')
+    
+
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-dir', default='/data/atlassmallfiles/users/zgubic/thesis/run/character/CharacterRNN_20_100steps')
+    parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
+    if args.verbose:
+        freestyle(args.input_dir)
     plot_losses(args.input_dir)
