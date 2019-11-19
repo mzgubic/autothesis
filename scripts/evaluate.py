@@ -8,7 +8,7 @@ mpl.use('agg')
 import matplotlib.pyplot as plt
 import pickle
 import generate
-from model import CharacterRNN
+from model import CharacterModel
 from pathlib import Path
 
 def plot_losses(loc):
@@ -18,6 +18,8 @@ def plot_losses(loc):
     settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
 
     # settings 
+    cell = settings['cell']
+    hidden_size = settings['hidden_size']
     every_n = settings['every_n']
     token = settings['token']
     small = settings['small']
@@ -27,8 +29,8 @@ def plot_losses(loc):
     # load the models
     models = []
     for fname in os.listdir(model_dir/'checkpoints'):
-        vocab = generate.get_vocab(token, settings['small'])
-        model = CharacterRNN(64, vocab)
+        vocab = generate.get_vocab(token, small)
+        model = CharacterModel(cell, hidden_size, vocab)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
         models.append(model)
@@ -79,18 +81,21 @@ def freestyle(loc):
     settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
 
     # settings 
+    cell = settings['cell']
+    hidden_size = settings['hidden_size']
     token = settings['token']
+    small = settings['small']
     n_steps = settings['n_steps']
     every_n = settings['every_n']
     how_many = 100
     temperature = 0.5
 
     # load the models
-    vocab = generate.get_vocab(token, settings['small'])
+    vocab = generate.get_vocab(token, small)
     for i, fname in enumerate(os.listdir(model_dir/'checkpoints')):
 
         # load the model
-        model = CharacterRNN(64, vocab)
+        model = CharacterModel(cell, hidden_size, vocab)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
 

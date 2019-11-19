@@ -8,24 +8,35 @@ import matplotlib.pyplot as plt
 import utils
 import generate
 
-class CharacterRNN(nn.Module):
+class CharacterModel(nn.Module):
 
-    def __init__(self, hidden_size, vocab):
+    def __init__(self, cell, hidden_size, vocab):
 
-        super(CharacterRNN, self).__init__()
+        super(CharacterModel, self).__init__()
         self.vocab = vocab
 
         # embedding parameters
+        self.cell = cell
         self.input_size = self.vocab.size
         self.hidden_size = hidden_size
 
         # layers
-        self.rnn = torch.nn.RNN(self.input_size, self.hidden_size, batch_first=True)
+        tclass = getattr(torch.nn, self.cell)
+        self.rnn = tclass(self.input_size, self.hidden_size, batch_first=True)
         self.dense = torch.nn.Linear(self.hidden_size, self.vocab.size)
 
     def forward(self, x):
 
-        rnn_output, h = self.rnn(x)
+        # apply rnn
+        rnn_output, state = self.rnn(x)
+
+        # unpack
+        if self.cell in ['RNN', 'GRU']:
+            h = state
+        elif self.cell == 'LSTM':
+            h, c = state
+
+        # create output
         output = torch.squeeze(self.dense(h), dim=0)
 
         return output
@@ -95,7 +106,7 @@ if __name__ == '__main__':
     vocab = generate.get_vocab(token, small=small)
 
     # build the model
-    model = CharacterRNN(hidden_size, vocab)
+    model = CharacterModel('RNN', hidden_size, vocab)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()

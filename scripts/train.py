@@ -9,10 +9,11 @@ import numpy as np
 import generate
 import evaluate
 import utils
-from model import CharacterRNN
+from model import CharacterModel
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--token', default='character', choices=['character', 'word'])
+parser.add_argument('--cell', default='RNN', choices=['RNN', 'GRU', 'LSTM'])
 parser.add_argument('--max-len', type=int, default=20)
 parser.add_argument('--hidden-size', type=int, default=64)
 parser.add_argument('--batch-size', type=int, default=64)
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     vocab = generate.get_vocab(args.token, small=args.small)
 
     # build the model
-    model = CharacterRNN(args.hidden_size, vocab)
+    model = CharacterModel(args.cell, args.hidden_size, vocab)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
@@ -54,10 +55,11 @@ if __name__ == '__main__':
     # save the settings
     settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
                 'n_steps':args.n_steps, 'every_n':every_n, 'hidden_size':args.hidden_size,
-                'batch_size':args.batch_size, 'learning_rate':args.learning_rate}
+                'batch_size':args.batch_size, 'learning_rate':args.learning_rate,
+                'cell':args.cell}
 
     # directory housekeeping
-    model_dir = utils.model_dir_name(type(model).__name__, settings)
+    model_dir = utils.model_dir_name(settings)
     if os.path.exists(model_dir) and args.force:
         os.system('rm -r {}'.format(model_dir))
     os.makedirs(model_dir/'checkpoints')
