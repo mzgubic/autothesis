@@ -150,7 +150,7 @@ def train():
         print(time_txt)
         handle.write('\n'+time_txt+'\n')
     with open(model_dir/'time.txt', 'w') as handle:
-        handle.write(str(dt)+'\n')
+        handle.write(str(dt/3600.)+'\n')
         
 
     loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_taken':dt}
@@ -158,6 +158,7 @@ def train():
 
     # evaluate
     evaluate.plot_losses(model_dir)
+    print(settings)
 
 
 def write_job(idx):
