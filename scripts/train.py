@@ -23,12 +23,14 @@ parser.add_argument('--learning-rate', type=float, default=0.001)
 parser.add_argument('--small', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--condor', action='store_true')
+parser.add_argument('--n-cores', type=int, default=None)
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--n-steps', type=int, default=1000)
 group.add_argument('--n-epochs', type=int)
 
 args = parser.parse_args()
+
 
 def train():
 
@@ -75,7 +77,8 @@ def train():
     settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
                 'n_steps':args.n_steps, 'n_epochs':args.n_epochs, 'every_n':every_n,
                 'hidden_size':args.hidden_size, 'batch_size':args.batch_size,
-                'learning_rate':args.learning_rate, 'cell':args.cell}
+                'learning_rate':args.learning_rate, 'cell':args.cell,
+                'n_cores':args.n_cores} # TODO: these is pretty much just the args namespace
 
     # directory housekeeping
     model_dir = utils.model_dir_name(settings, use_epochs)
@@ -146,6 +149,9 @@ def train():
     with open(model_dir/out_stream, 'a') as handle:
         print(time_txt)
         handle.write('\n'+time_txt+'\n')
+    with open(model_dir/'time.txt', 'w') as handle:
+        handle.write(str(dt)+'\n')
+        
 
     loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_taken':dt}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
@@ -154,7 +160,7 @@ def train():
     evaluate.plot_losses(model_dir)
 
 
-def write_job():
+def write_job(idx):
 
     options = sys.argv
     options.remove('--condor')
@@ -162,46 +168,49 @@ def write_job():
     commands = [
                 '#!/bin/sh',
                 'cd {}'.format(os.getenv('SRC')),
-                'source setup_env.sh',
+                'source {}/setup.sh'.format(os.getenv('SRC')),
                 'cd scripts',
                 'python {}'.format(' '.join(options))
                 ]
 
-    with open('learn.sh', 'w') as handle:
+    script = utils.data_path / 'run'/ args.token / 'learn{}.sh'.format(idx)
+    with open(script, 'w') as handle:
         for c in commands:
             handle.write(c+'\n')
 
-def send_job():
+def send_job(idx):
 
     # create the submit object
-    d = {'executable':'learn.sh',
+    run_path = utils.data_path / 'run' / args.token
+    script = run_path / 'learn{}.sh'.format(idx)
+    d = {'executable':script,
          'arguments':'$(ClusterID)',
-         'request_cpus':4,
+         'output':'{}/$(ClusterId).out'.format(run_path),
+         'error':'{}/$(ClusterId).err'.format(run_path),
+         'log':'{}/$(ClusterId).log'.format(run_path),
+         'request_cpus':args.n_cores,
          'request_memory':'16 GB',
+         'getenv':True,
          'stream_output':True,
          'stream_error':True,
          }
-    #f.write('output         = {}/$(ClusterId).out\n'.format(job_dir))
-    #f.write('error          = {}/$(ClusterId).err\n'.format(job_dir))
-    #f.write('log            = {}/$(ClusterId).log\n'.format(job_dir))
+
     sub = htcondor.Submit(d)
     print(sub)
 
     # create the scheduler object
     schedd = htcondor.Schedd()
     with schedd.transaction() as txn:
-        print(sub.queue(txn))
-
-    os.system('rm learn.sh')
-
-
+        sub.queue(txn)
+        print('submitted')
 
 
 if __name__ == '__main__':
 
     if args.condor:
-        write_job()
-        send_job()
+        rnd = np.random.randint(1e9)
+        write_job(rnd)
+        send_job(rnd)
 
     else:
         train()
