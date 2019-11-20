@@ -116,9 +116,7 @@ if __name__ == '__main__':
     every_n = int(total_n/100)
     running_loss = 0
     losses = []
-    gen = generate.generate('train', token=token, max_len=max_len, small=small)
-    print(next(gen))
-    for i, (batch, labels) in enumerate(gen):
+    for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
 
         # one hot encode
         batch = generate.one_hot_encode(batch, vocab)
