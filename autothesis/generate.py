@@ -3,6 +3,23 @@ import pickle
 import h5py
 import utils
 
+
+def get_n_batches_in_epoch(split, token, batch_size, max_len, small):
+
+    # load the numpy array
+    data_path = utils.data_path/'tokens'/token
+
+    with h5py.File(data_path/'{}_tokens.h5'.format('small' if small else 'full'), 'r') as handle:
+        seq = np.array(handle[split])
+
+    # exhaust iterator after one epoch: when the number of yielded characters is the total number of characters
+    per_batch = batch_size * max_len
+    total = len(seq)
+    n_batches = int(total/per_batch)
+
+    return int(n_batches/1000)
+
+
 def generate(split, token, batch_size=8, max_len=4, small=False):
     """
     Generate samples from the text corpus.
@@ -31,7 +48,8 @@ def generate(split, token, batch_size=8, max_len=4, small=False):
     total = len(seq)
     n_batches = int(total/per_batch)
 
-    print('Generator will yield {} batches before exhausting'.format(n_batches))
+    if split == 'train':
+        print('Generator will yield {} batches before exhausting'.format(n_batches))
 
     # sample the subparts
     for _ in range(n_batches):

@@ -24,6 +24,8 @@ def plot_losses(loc):
     token = settings['token']
     small = settings['small']
     max_len = settings['max_len']
+    n_epochs = settings['n_epochs']
+    n_steps = settings['n_steps']
     criterion = nn.CrossEntropyLoss()
 
     # load the models
@@ -64,8 +66,13 @@ def plot_losses(loc):
     for quantity, description in zip([loss, acc], ['Loss', 'Accuracy']):
         fig, ax = plt.subplots()
         for split in splits:
-            ax.plot((1+np.arange(len(quantity[split])))*every_n, quantity[split], label=split)
+            xs = (1+np.arange(len(quantity[split])))*every_n
+            if n_epochs > 1:
+                xs = xs / n_steps
+            ax.plot(xs, quantity[split], label=split)
         ax.set_xlabel('Training step')
+        if n_epochs > 1:
+            ax.set_xlabel('Epoch')
         ax.set_ylabel(description)
         upper = ax.get_ylim()[1] if description == 'Loss' else 1
         ax.set_ylim(0, upper)
@@ -115,7 +122,8 @@ def freestyle(loc):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-dir', default='/data/atlassmallfiles/users/zgubic/thesis/run/character/cellRNN__hidden_size64__learning_rate0.001__n_steps1000__batch_size64__max_len20')
+    default = '/data/atlassmallfiles/users/zgubic/thesis/run/character/cellRNN__hidden_size64__learning_rate0.001__batch_size64__max_len20__n_epochs2'
+    parser.add_argument('--input-dir', default=default)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
