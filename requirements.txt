@@ -15,6 +15,7 @@ docutils==0.15.2
 entrypoints==0.3
 gensim==3.8.1
 h5py==2.10.0
+htcondor==8.9.4
 idna==2.8
 importlib-metadata==0.23
 ipykernel==5.1.2
