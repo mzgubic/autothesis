@@ -137,9 +137,13 @@ if __name__ == '__main__':
                 break
     
     # save the losses
-    time_per_step = (time.time() - t0) / args.n_steps
-    print('time per step: {}'.format(time_per_step))
-    loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_per_step':time_per_step}
+    dt = (time.time() - t0)
+    time_txt = 'time taken: {:2.2f}h'.format(dt/3600.)
+    with open(model_dir/'out_stream.txt', 'a') as handle:
+        print(time_txt)
+        handle.write('\n'+time_txt+'\n')
+
+    loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_taken':dt}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
 
     # evaluate

@@ -17,7 +17,7 @@ def get_n_batches_in_epoch(split, token, batch_size, max_len, small):
     total = len(seq)
     n_batches = int(total/per_batch)
 
-    return int(n_batches/1000)
+    return n_batches
 
 
 def generate(split, token, batch_size=8, max_len=4, small=False):
