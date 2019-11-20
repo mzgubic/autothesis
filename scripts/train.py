@@ -2,9 +2,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import os
+import sys
 import time
 import pickle
 import argparse
+import htcondor
 import numpy as np
 import generate
 import evaluate
@@ -20,6 +22,7 @@ parser.add_argument('--batch-size', type=int, default=64)
 parser.add_argument('--learning-rate', type=float, default=0.001)
 parser.add_argument('--small', action='store_true')
 parser.add_argument('--force', action='store_true')
+parser.add_argument('--condor', action='store_true')
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--n-steps', type=int, default=1000)
@@ -27,7 +30,7 @@ group.add_argument('--n-epochs', type=int)
 
 args = parser.parse_args()
 
-if __name__ == '__main__':
+def train():
 
     # training and sampling
     temperature = 0.5
@@ -149,4 +152,58 @@ if __name__ == '__main__':
 
     # evaluate
     evaluate.plot_losses(model_dir)
+
+
+def write_job():
+
+    options = sys.argv
+    options.remove('--condor')
+
+    commands = [
+                '#!/bin/sh',
+                'cd {}'.format(os.getenv('SRC')),
+                'source setup_env.sh',
+                'cd scripts',
+                'python {}'.format(' '.join(options))
+                ]
+
+    with open('learn.sh', 'w') as handle:
+        for c in commands:
+            handle.write(c+'\n')
+
+def send_job():
+
+    # create the submit object
+    d = {'executable':'learn.sh',
+         'arguments':'$(ClusterID)',
+         'request_cpus':4,
+         'request_memory':'16 GB',
+         'stream_output':True,
+         'stream_error':True,
+         }
+    #f.write('output         = {}/$(ClusterId).out\n'.format(job_dir))
+    #f.write('error          = {}/$(ClusterId).err\n'.format(job_dir))
+    #f.write('log            = {}/$(ClusterId).log\n'.format(job_dir))
+    sub = htcondor.Submit(d)
+    print(sub)
+
+    # create the scheduler object
+    schedd = htcondor.Schedd()
+    with schedd.transaction() as txn:
+        print(sub.queue(txn))
+
+    os.system('rm learn.sh')
+
+
+
+
+if __name__ == '__main__':
+
+    if args.condor:
+        write_job()
+        send_job()
+
+    else:
+        train()
+
 
