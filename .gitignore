@@ -11,3 +11,5 @@ etc/
 notebooks/.ipynb_checkpoints
 notebooks/a2
 notebooks/a4
+*.nfs*
+*nohup.out

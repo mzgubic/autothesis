@@ -79,17 +79,18 @@ if __name__ == '__main__':
     if os.path.exists(model_dir) and args.force:
         os.system('rm -r {}'.format(model_dir))
     os.makedirs(model_dir/'checkpoints')
+    out_stream = 'out_stream.txt'
 
     # dump the settings
     pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
 
     # run the training loop
     for epoch in range(1, args.n_epochs+1):
-        print()
-        print('#'*20)
-        print('# Epoch {}'.format(epoch))
-        print('#'*20)
-        print()
+        opening = ['', '#'*20, '# Epoch {}'.format(epoch), '#'*20, '']
+        with open(model_dir/out_stream, 'a') as handle:
+            for txt in opening:
+                print(txt)
+                handle.write(txt+'\n')
         train_gen = generate.generate('train', token=args.token, max_len=args.max_len,
                                       small=args.small, batch_size=args.batch_size)
         for i, (batch, labels) in enumerate(train_gen):
@@ -127,7 +128,7 @@ if __name__ == '__main__':
                 monitor.append(model.compose('The Standard Model of pa', temperature, how_many))
                 for m in monitor:
                     print(m)
-                    with open(model_dir/'out_stream.txt', 'a') as handle:
+                    with open(model_dir/out_stream, 'a') as handle:
                         handle.write(m+'\n')
                 
                 # save the model
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     # save the losses
     dt = (time.time() - t0)
     time_txt = 'time taken: {:2.2f}h'.format(dt/3600.)
-    with open(model_dir/'out_stream.txt', 'a') as handle:
+    with open(model_dir/out_stream, 'a') as handle:
         print(time_txt)
         handle.write('\n'+time_txt+'\n')
 
