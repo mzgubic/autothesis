@@ -41,6 +41,7 @@ def plot_losses(loc):
     gens = {split:generate.generate(split, token=token, max_len=max_len, small=small, batch_size=N) for split in splits}
     batch, labels = {}, {}
     for split in splits:
+        batches_in_epoch = next(gens[split])
         for b, l in gens[split]:
             b = generate.one_hot_encode(b, vocab)
             batch[split], labels[split] = torch.Tensor(b), torch.Tensor(l).long()
@@ -68,6 +69,7 @@ def plot_losses(loc):
         ax.set_xlabel('Training step')
         ax.set_ylabel(description)
         upper = ax.get_ylim()[1] if description == 'Loss' else 1
+        ax.set_title(model_dir.name, fontsize=8)
         ax.set_ylim(0, upper)
         ax.set_xlim(0, ax.get_xlim()[1])
         ax.legend()
@@ -114,7 +116,7 @@ def freestyle(loc):
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-dir', default='/data/atlassmallfiles/users/zgubic/thesis/run/character/CharacterRNN_20_100steps')
+    parser.add_argument('--input-dir', default='/data/atlassmallfiles/users/zgubic/thesis/run/character/cellRNN__hidden_size64__learning_rate0.001__n_steps1000__batch_size64__max_len20')
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 

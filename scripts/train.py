@@ -40,6 +40,7 @@ if __name__ == '__main__':
     # create the validation set
     n_valid = 10000
     valid_gen = generate.generate('valid', token=args.token, max_len=args.max_len, small=args.small, batch_size=n_valid)
+    batches_in_epoch = next(valid_gen)
     for valid_batch, valid_labels in valid_gen:
         valid_batch = generate.one_hot_encode(valid_batch, vocab)
         valid_batch, valid_labels = torch.Tensor(valid_batch), torch.Tensor(valid_labels).long()

@@ -30,6 +30,7 @@ def generate(split, token, batch_size=8, max_len=4, small=False):
     per_batch = batch_size * max_len
     total = len(seq)
     n_batches = int(total/per_batch)
+    yield n_batches
 
     print('Generator will yield {} batches before exhausting'.format(n_batches))
 
@@ -156,7 +157,9 @@ def main():
     small = False
     vocab = get_vocab(token, small)
 
-    for batch, labels in generate('train', token=token, max_len=max_len, small=small):
+    gen = generate('train', token=token, max_len=max_len, small=small)
+    print(next(gen))
+    for batch, labels in gen:
         print(batch)
         #print(labels)
         #print(int2str(batch, vocab))
