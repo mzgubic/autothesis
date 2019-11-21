@@ -1,5 +1,5 @@
 # change n_cores
-for i in {1..16}
+for cell in RNN GRU LSTM
 do
-    py train.py --force --n-steps 100000 --cell RNN --condor --n-cores $i
+    py train.py --force --n-epochs 10 --cell $cell --condor
 done

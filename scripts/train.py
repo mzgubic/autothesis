@@ -92,11 +92,14 @@ def train():
 
     # run the training loop
     for epoch in range(1, args.n_epochs+1):
-        opening = ['', '#'*20, '# Epoch {}'.format(epoch), '#'*20, '']
+
+        opening = ['', '#'*20, '# Epoch {} (t={:2.2f}h)'.format(epoch, (time.time() - t0)/3600.), '#'*20, '']
         with open(model_dir/out_stream, 'a') as handle:
             for txt in opening:
                 print(txt)
                 handle.write(txt+'\n')
+
+        # create the generator for each epoch
         train_gen = generate.generate('train', token=args.token, max_len=args.max_len,
                                       small=args.small, batch_size=args.batch_size)
         for i, (batch, labels) in enumerate(train_gen):
@@ -145,14 +148,13 @@ def train():
     
     # save the losses
     dt = (time.time() - t0)
-    time_txt = 'time taken: {:2.2f}h'.format(dt/3600.)
+    time_txt = '\ntime taken: {:2.2f}h\n'.format(dt/3600.)
     with open(model_dir/out_stream, 'a') as handle:
         print(time_txt)
         handle.write('\n'+time_txt+'\n')
     with open(model_dir/'time.txt', 'w') as handle:
         handle.write(str(dt/3600.)+'\n')
         
-
     loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_taken':dt}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
 
