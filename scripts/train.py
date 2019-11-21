@@ -23,7 +23,7 @@ parser.add_argument('--learning-rate', type=float, default=0.001)
 parser.add_argument('--small', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--condor', action='store_true')
-parser.add_argument('--n-cores', type=int, default=None)
+parser.add_argument('--n-cores', type=int, default=1)
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('--n-steps', type=int, default=1000)
