@@ -1,5 +1,8 @@
 # change n_cores
 for cell in RNN GRU LSTM
 do
-    py train.py --force --n-epochs 10 --cell $cell --condor
+    for hsize in 64 128 256
+    do
+        py train.py --force --condor --n-epochs 1 --cell $cell --hidden-size $hsize
+    done
 done

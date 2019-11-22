@@ -36,7 +36,7 @@ def train():
 
     # training and sampling
     temperature = 0.5
-    how_many = 50
+    how_many = 70
     vocab = generate.get_vocab(args.token, small=args.small)
 
     # build the model
@@ -67,7 +67,7 @@ def train():
             exit()
 
     # training settings
-    every_n = int(args.n_steps/10)
+    every_n = int(args.n_steps/100)
     running_loss = 0
     training_losses = []
     valid_losses = []
@@ -134,14 +134,14 @@ def train():
 
                 # monitor progress
                 monitor = ['\n{}/{} done'.format(i+1, args.n_steps)]
-                monitor.append(model.compose('The Standard Model of pa', temperature, how_many))
+                monitor.append(model.compose('The Standard Model of', temperature, how_many))
                 for m in monitor:
                     print(m)
                     with open(model_dir/out_stream, 'a') as handle:
                         handle.write(m+'\n')
                 
                 # save the model
-                torch.save(model.state_dict(), model_dir/'checkpoints'/'epoch{}_step_{}.pt'.format(epoch, i))
+                torch.save(model.state_dict(), model_dir/'checkpoints'/'epoch{}_step_{}.pt'.format(epoch, round(i/every_n)))
 
             if i >= args.n_steps:
                 break
@@ -175,6 +175,7 @@ def write_job(idx):
                 'cd scripts',
                 'python {}'.format(' '.join(options))
                 ]
+    print(commands[-1])
 
     script = utils.data_path / 'run'/ args.token / 'learn{}.sh'.format(idx)
     with open(script, 'w') as handle:
@@ -192,14 +193,13 @@ def send_job(idx):
          'error':'{}/$(ClusterId).err'.format(run_path),
          'log':'{}/$(ClusterId).log'.format(run_path),
          'request_cpus':args.n_cores,
-         'request_memory':'16 GB',
+         'request_memory':'40 GB',
          'getenv':True,
          'stream_output':True,
          'stream_error':True,
          }
 
     sub = htcondor.Submit(d)
-    print(sub)
 
     # create the scheduler object
     schedd = htcondor.Schedd()
