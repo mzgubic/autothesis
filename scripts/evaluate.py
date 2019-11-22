@@ -115,8 +115,8 @@ def freestyle(loc):
         monitor.append(model.compose('s = ', temperature, how_many))
         for m in monitor:
             print(m)
-            #with open(model_dir/'out_stream.txt', 'a') as handle:
-            #    handle.write(m+'\n')
+            with open(model_dir/'evaluate_stream.txt', 'a') as handle:
+                handle.write(m+'\n')
     
 
 if __name__ == '__main__':
