@@ -62,6 +62,11 @@ def plot_losses(loc):
             _, preds = torch.max(outputs, 1)
             acc[split].append(sum(preds==labels[split]) / float(N))
 
+    for split in splits:
+        with open(model_dir/'best_{}_acc.txt'.format(split), 'w') as handle:
+            best = max(acc[split])
+            handle.write('{}\n'.format(best))
+
     # plot both quantities
     for quantity, description in zip([loss, acc], ['Loss', 'Accuracy']):
         fig, ax = plt.subplots()

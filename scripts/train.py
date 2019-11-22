@@ -146,7 +146,7 @@ def train():
             if i >= args.n_steps:
                 break
     
-    # save the losses
+    # save information
     dt = (time.time() - t0)
     time_txt = '\ntime taken: {:2.2f}h\n'.format(dt/3600.)
     with open(model_dir/out_stream, 'a') as handle:
