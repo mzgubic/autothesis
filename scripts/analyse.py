@@ -7,9 +7,23 @@ import itertools
 def main():
 
     # show 
-    for max_len in [10, 20, 50, 100]:
-        plot_time('hidden_size', 'cell', 'max_len', max_len)
-        plot_best_accuracies('hidden_size', 'cell', 'max_len', max_len)
+    x = 'hidden_size'
+    kind = 'cell'
+    cut = 'max_len'
+    cut_vals = [10, 20, 50, 100]
+    for cut_val in cut_vals:
+        plot_time(x, kind, cut, cut_val)
+        plot_best_accuracies(x, kind, cut, cut_val)
+
+    x = 'hidden_size'
+    kind = 'max_len'
+    cut = 'cell'
+    cut_vals = ['RNN', 'GRU', 'LSTM']
+    for cut_val in cut_vals:
+        plot_time(x, kind, cut, cut_val)
+        plot_best_accuracies(x, kind, cut, cut_val)
+
+
 
 
 def extract_values(x, y, k, cut, cut_val):
@@ -27,7 +41,10 @@ def extract_values(x, y, k, cut, cut_val):
         this_kind = [s for s in components if k in s][0].replace(k, '')
 
         # apply the cut
-        keep = float([s for s in components if cut in s][0].replace(cut, '')) == float(cut_val)
+        try:
+            keep = float([s for s in components if cut in s][0].replace(cut, '')) == float(cut_val)
+        except ValueError:
+            keep = [s for s in components if cut in s][0].replace(cut, '') == cut_val
         if not keep:
             continue
 
@@ -60,7 +77,7 @@ def plot_time(x, k, cut, cut_val):
     # plot
     fig, ax = plt.subplots()
     for kind in kinds:
-        ax.plot(xs[kind], ys[kind], label=kind)
+        ax.plot(xs[kind], ys[kind], label='{}={}'.format(k, kind))
         ax.set_xlabel(x)
         ax.set_ylabel('training time (h)')
     ax.set_title('{} == {}'.format(cut, cut_val))
@@ -84,7 +101,7 @@ def plot_best_accuracies(x, k, cut, cut_val):
         ys = {kind:[acc[kind][x] for x in xs[kind]] for kind in kinds}
 
         for kind in kinds:
-            ax.plot(xs[kind], ys[kind], linestyle, label='{} ({})'.format(kind, split))
+            ax.plot(xs[kind], ys[kind], linestyle, label='{}={} ({})'.format(k, kind, split))
             ax.set_xlabel(x)
             ax.set_ylabel('accuracy')
         ax.set_title('{} == {}'.format(cut, cut_val))

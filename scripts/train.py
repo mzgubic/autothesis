@@ -67,7 +67,7 @@ def train():
             exit()
 
     # training settings
-    every_n = int(args.n_steps/100)
+    every_n = int(args.n_steps/20)
     running_loss = 0
     training_losses = []
     valid_losses = []
