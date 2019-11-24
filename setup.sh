@@ -1,4 +1,4 @@
 #!/bin/bash
-source ${SRC}/bin/activate
-export PYTHONPATH="$PYTHONPATH:${SRC}/autothesis"
+source bin/activate
+export PYTHONPATH="$PYTHONPATH:$(pwd)/autothesis"
 
