@@ -170,8 +170,8 @@ def write_job(idx):
 
     commands = [
                 '#!/bin/sh',
-                'cd {}'.format(os.getenv('SRC')),
-                'source {}/setup.sh'.format(os.getenv('SRC')),
+                'cd {}'.format(utils.SRC),
+                'source {}/setup.sh'.format(utils.SRC),
                 'cd scripts',
                 'python {}'.format(' '.join(options))
                 ]
