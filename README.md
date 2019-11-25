@@ -1,6 +1,7 @@
 # autothesis
 
 Sit back, relax, and let machines write your thesis.
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mzgubic/autothesis/master?filepath=notebooks%2FGenerateCharacterTokens.ipynb)
 
 ## Set up the code and the environment
 ```
