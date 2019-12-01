@@ -24,11 +24,8 @@ parser.add_argument('--small', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--condor', action='store_true')
 parser.add_argument('--n-cores', type=int, default=1)
-
-group = parser.add_mutually_exclusive_group()
-group.add_argument('--n-steps', type=int, default=1000)
-group.add_argument('--n-epochs', type=int)
-
+parser.add_argument('--n-epochs', type=int, default=1)
+parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
 
@@ -56,32 +53,20 @@ def train():
 
     # how many epochs do we need?
     batches_per_epoch = generate.get_n_batches_in_epoch('train', args.token, args.batch_size, args.max_len, args.small)
-    if args.n_epochs:
-        use_epochs = True
-        args.n_steps = batches_per_epoch
-    else:
-        use_epochs = False
-        args.n_epochs = 1
-        if args.n_steps > batches_per_epoch:
-            print('{} steps exceeds {} steps per epoch. specify the numbers of epochs instead'.format(args.n_steps, batches_per_epoch))
-            exit()
 
     # training settings
-    every_n = int(args.n_steps/20)
+    every_n = int(batches_per_epoch/20) if not args.debug else 50
     running_loss = 0
     training_losses = []
     valid_losses = []
     t0 = time.time()
  
     # save the settings
-    settings = {'token':args.token, 'max_len':args.max_len, 'small':args.small,
-                'n_steps':args.n_steps, 'n_epochs':args.n_epochs, 'every_n':every_n,
-                'hidden_size':args.hidden_size, 'batch_size':args.batch_size,
-                'learning_rate':args.learning_rate, 'cell':args.cell,
-                'n_cores':args.n_cores} # TODO: these is pretty much just the args namespace
+    settings = {a:getattr(args, a) for a in dir(args) if a[0] != '_'}
+    print(settings)
 
     # directory housekeeping
-    model_dir = utils.model_dir_name(settings, use_epochs)
+    model_dir = utils.model_dir_name(settings)
     if os.path.exists(model_dir) and args.force:
         os.system('rm -r {}'.format(model_dir))
     os.makedirs(model_dir/'checkpoints')
@@ -133,7 +118,7 @@ def train():
                 valid_losses.append(float(criterion(valid_outputs, valid_labels)))
 
                 # monitor progress
-                monitor = ['\n{}/{} done'.format(i+1, args.n_steps)]
+                monitor = ['\n{}/{} done'.format(i+1, batches_per_epoch)]
                 monitor.append(model.compose('The Standard Model of', temperature, how_many))
                 for m in monitor:
                     print(m)
@@ -143,7 +128,7 @@ def train():
                 # save the model
                 torch.save(model.state_dict(), model_dir/'checkpoints'/'epoch{}_step_{}.pt'.format(epoch, round(i/every_n)))
 
-            if i >= args.n_steps:
+            if i >= 1000 and args.debug:
                 break
     
     # save information
@@ -160,7 +145,6 @@ def train():
 
     # evaluate
     evaluate.plot_losses(model_dir)
-    print(settings)
 
 
 def write_job(idx):

@@ -21,12 +21,10 @@ def plot_losses(loc):
     # settings 
     cell = settings['cell']
     hidden_size = settings['hidden_size']
-    every_n = settings['every_n']
     token = settings['token']
     small = settings['small']
     max_len = settings['max_len']
     n_epochs = settings['n_epochs']
-    n_steps = settings['n_steps']
     criterion = nn.CrossEntropyLoss()
 
     # load the models
@@ -75,9 +73,9 @@ def plot_losses(loc):
     for quantity, description in zip([loss, acc], ['Loss', 'Accuracy']):
         fig, ax = plt.subplots()
         for split in splits:
-            xs = (1+np.arange(len(quantity[split])))*every_n
-            if n_epochs > 1:
-                xs = xs / n_steps
+            xs = (1+np.arange(len(quantity[split])))
+            #if n_epochs > 1: # TODO
+            #    xs = xs / n_steps
             ax.plot(xs, quantity[split], label=split)
         ax.set_xlabel('Training step')
         if n_epochs > 1:
@@ -102,8 +100,6 @@ def freestyle(loc):
     hidden_size = settings['hidden_size']
     token = settings['token']
     small = settings['small']
-    n_steps = settings['n_steps']
-    every_n = settings['every_n']
     how_many = 100
     temperature = 0.5
 
@@ -117,7 +113,7 @@ def freestyle(loc):
         model.eval()
 
         # monitor progress
-        monitor = ['\n{}/{} '.format((i+1)*every_n, n_steps)]
+        monitor = ['\n{}/{} '.format((i+1))]
         monitor.append(model.compose('The Standard Mo', temperature, how_many))
         monitor.append(model.compose('[23] ATLAS Co', temperature, how_many))
         monitor.append(model.compose('[15] S. Wein', temperature, how_many))
