@@ -29,7 +29,7 @@ parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
 
 
-def train():
+def train(settings, model_dir):
 
     # training and sampling
     temperature = 0.5
@@ -61,19 +61,9 @@ def train():
     valid_losses = []
     t0 = time.time()
  
-    # save the settings
-    settings = {a:getattr(args, a) for a in dir(args) if a[0] != '_'}
-    print(settings)
-
-    # directory housekeeping
-    model_dir = utils.model_dir_name(settings)
-    if os.path.exists(model_dir) and args.force:
-        os.system('rm -r {}'.format(model_dir))
-    os.makedirs(model_dir/'checkpoints')
-    out_stream = 'out_stream.txt'
-
     # dump the settings
     pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
+    out_stream = 'out_stream.txt'
 
     # run the training loop
     for epoch in range(1, args.n_epochs+1):
@@ -147,10 +137,11 @@ def train():
     evaluate.plot_losses(model_dir)
 
 
-def write_job(idx):
+def write_job(model_dir):
 
     options = sys.argv
     options.remove('--condor')
+    options.remove('--force')
 
     commands = [
                 '#!/bin/sh',
@@ -161,21 +152,19 @@ def write_job(idx):
                 ]
     print(commands[-1])
 
-    script = utils.data_path / 'run'/ args.token / 'learn{}.sh'.format(idx)
+    script = model_dir / '{}.sh'.format(model_dir.name)
     with open(script, 'w') as handle:
         for c in commands:
             handle.write(c+'\n')
 
-def send_job(idx):
+def send_job(model_dir):
 
     # create the submit object
-    run_path = utils.data_path / 'run' / args.token
-    script = run_path / 'learn{}.sh'.format(idx)
-    d = {'executable':script,
+    d = {'executable':model_dir / '{}.sh'.format(model_dir.name),
          'arguments':'$(ClusterID)',
-         'output':'{}/$(ClusterId).out'.format(run_path),
-         'error':'{}/$(ClusterId).err'.format(run_path),
-         'log':'{}/$(ClusterId).log'.format(run_path),
+         'output':'{}/$(ClusterId).out'.format(model_dir),
+         'error':'{}/$(ClusterId).err'.format(model_dir),
+         'log':'{}/$(ClusterId).log'.format(model_dir),
          'request_cpus':args.n_cores,
          'request_memory':'40 GB',
          'getenv':True,
@@ -194,12 +183,23 @@ def send_job(idx):
 
 if __name__ == '__main__':
 
-    if args.condor:
-        rnd = np.random.randint(1e9)
-        write_job(rnd)
-        send_job(rnd)
+    # settings
+    settings = {a:getattr(args, a) for a in dir(args) if a[0] != '_'}
 
+    # model dir
+    model_dir = utils.model_dir_name(settings)
+    if args.force:
+        os.system('rm -r {}'.format(model_dir))
+    if not model_dir.exists():
+        os.makedirs(model_dir/'checkpoints')
+
+    # send to codor
+    if args.condor:
+        write_job(model_dir)
+        send_job(model_dir)
+
+    # or train interactively
     else:
-        train()
+        train(settings, model_dir)
 
 
