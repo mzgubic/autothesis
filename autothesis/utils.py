@@ -17,3 +17,11 @@ def model_dir_name(settings):
     folder_name = '__'.join(['{}{}'.format(k, settings[k]) for k in relevant_keys])
 
     return data_path / 'run' / settings['token'] / folder_name
+
+def report(txt, fpath):
+
+    print(txt)
+    with open(fpath, 'a') as handle:
+        handle.write(txt + '\n')
+
+    

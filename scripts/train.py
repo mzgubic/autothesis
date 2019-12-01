@@ -63,16 +63,14 @@ def train(settings, model_dir):
  
     # dump the settings
     pickle.dump(settings, open(model_dir/ 'settings.pkl', 'wb'))
-    out_stream = 'out_stream.txt'
+    out_stream = model_dir / 'out_stream.txt'
 
     # run the training loop
     for epoch in range(1, args.n_epochs+1):
 
         opening = ['', '#'*20, '# Epoch {} (t={:2.2f}h)'.format(epoch, (time.time() - t0)/3600.), '#'*20, '']
-        with open(model_dir/out_stream, 'a') as handle:
-            for txt in opening:
-                print(txt)
-                handle.write(txt+'\n')
+        for txt in opening:
+            utils.report(txt, out_stream)
 
         # create the generator for each epoch
         train_gen = generate.generate('train', token=args.token, max_len=args.max_len,
@@ -111,9 +109,7 @@ def train(settings, model_dir):
                 monitor = ['\n{}/{} done'.format(i+1, batches_per_epoch)]
                 monitor.append(model.compose('The Standard Model of', temperature, how_many))
                 for m in monitor:
-                    print(m)
-                    with open(model_dir/out_stream, 'a') as handle:
-                        handle.write(m+'\n')
+                    utils.report(m, out_stream)
                 
                 # save the model
                 torch.save(model.state_dict(), model_dir/'checkpoints'/'epoch{}_step_{}.pt'.format(epoch, round(i/every_n)))
@@ -124,11 +120,8 @@ def train(settings, model_dir):
     # save information
     dt = (time.time() - t0)
     time_txt = '\ntime taken: {:2.2f}h\n'.format(dt/3600.)
-    with open(model_dir/out_stream, 'a') as handle:
-        print(time_txt)
-        handle.write('\n'+time_txt+'\n')
-    with open(model_dir/'time.txt', 'w') as handle:
-        handle.write(str(dt/3600.)+'\n')
+    utils.report(time_txt, out_stream)
+    utils.report(str(dt/3600.), model_dir/'time.txt')
         
     loss_dict = {'train':training_losses, 'valid':valid_losses, 'time_taken':dt}
     pickle.dump(loss_dict, open(model_dir/ 'losses.pkl', 'wb'))
