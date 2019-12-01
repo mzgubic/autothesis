@@ -1,15 +1,12 @@
 import os
 from pathlib import Path
 
-if os.getenv('USER') == 'zgubic' and 'pplxint' in os.uname().nodename:
-    SRC="/home/zgubic/thesis/autothesis"
-    DATA="/data/atlassmallfiles/users/zgubic/thesis"
-elif os.getenv('USER') == 'zgubic' and 'pposx' in os.uname().nodename:
+if os.getenv('USER') == 'zgubic' and 'pposx' in os.uname().nodename: # local
     SRC="/Users/zgubic/Projects/autothesis"
     DATA="/Users/zgubic/Projects/autothesis"
-else:
-    SRC=""
-    DATA=""
+else: # pplxint and condor
+    SRC="/home/zgubic/thesis/autothesis"
+    DATA="/data/atlassmallfiles/users/zgubic/thesis"
 
 data_path = Path(DATA)
 src_path = Path(SRC)

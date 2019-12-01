@@ -1,4 +1,5 @@
 import os
+import time
 import argparse
 import torch
 import torch.nn as nn
@@ -30,8 +31,8 @@ def plot_losses(loc):
 
     # load the models
     models = []
+    vocab = generate.get_vocab(token, small)
     for fname in os.listdir(model_dir/'checkpoints'):
-        vocab = generate.get_vocab(token, small)
         model = CharacterModel(cell, hidden_size, vocab)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
@@ -52,15 +53,18 @@ def plot_losses(loc):
     loss = {split:[] for split in splits}
     acc = {split:[] for split in splits}
     for i, model in enumerate(models):
+        t0 = time.time()
         print(i)
         for split in splits:
             # loss
             outputs = model(batch[split])
             l = criterion(outputs, labels[split])
-            loss[split].append(l)
+            loss[split].append(float(l))
             # accuracy
             _, preds = torch.max(outputs, 1)
-            acc[split].append(sum(preds==labels[split]) / float(N))
+            a = sum(preds==labels[split]) / float(N)
+            acc[split].append(float(a))
+        print('{:2.2f}s'.format(time.time()-t0))
 
     for split in splits:
         with open(model_dir/'best_{}_acc.txt'.format(split), 'w') as handle:
