@@ -25,6 +25,7 @@ def plot_losses(loc):
     small = settings['small']
     max_len = settings['max_len']
     n_epochs = settings['n_epochs']
+    n_saves = settings['n_saves']
     criterion = nn.CrossEntropyLoss()
 
     # load the models
@@ -73,11 +74,9 @@ def plot_losses(loc):
     for quantity, description in zip([loss, acc], ['Loss', 'Accuracy']):
         fig, ax = plt.subplots()
         for split in splits:
-            xs = (1+np.arange(len(quantity[split])))
-            #if n_epochs > 1: # TODO
-            #    xs = xs / n_steps
+            xs = (1+np.arange(len(quantity[split]))) / n_saves
             ax.plot(xs, quantity[split], label=split)
-        ax.set_xlabel('Training step')
+        ax.set_xlabel('Training epoch')
         if n_epochs > 1:
             ax.set_xlabel('Epoch')
         ax.set_ylabel(description)
@@ -118,16 +117,15 @@ def freestyle(loc):
         monitor.append(model.compose('[23] ATLAS Co', temperature, how_many))
         monitor.append(model.compose('[15] S. Wein', temperature, how_many))
         monitor.append(model.compose('s = ', temperature, how_many))
+
         for m in monitor:
-            print(m)
-            with open(model_dir/'evaluate_stream.txt', 'a') as handle:
-                handle.write(m+'\n')
+            utils.report(m, model_dir/'evaluate_stream.txt')
     
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    default = '/data/atlassmallfiles/users/zgubic/thesis/run/character/cellRNN__hidden_size64__learning_rate0.001__batch_size64__max_len20__n_epochs2'
+    default = '/data/atlassmallfiles/users/zgubic/thesis/run/character/debugTrue__cellRNN__hidden_size64__learning_rate0.001__batch_size64__max_len20__n_cores1__n_epochs1'
     parser.add_argument('--input-dir', default=default)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()

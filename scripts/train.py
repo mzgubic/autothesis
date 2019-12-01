@@ -24,6 +24,7 @@ parser.add_argument('--small', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--condor', action='store_true')
 parser.add_argument('--n-cores', type=int, default=1)
+parser.add_argument('--n-saves', type=int, default=20)
 parser.add_argument('--n-epochs', type=int, default=1)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
@@ -55,7 +56,7 @@ def train(settings, model_dir):
     batches_per_epoch = generate.get_n_batches_in_epoch('train', args.token, args.batch_size, args.max_len, args.small)
 
     # training settings
-    every_n = int(batches_per_epoch/20) if not args.debug else 50
+    every_n = int(batches_per_epoch/args.n_saves) if not args.debug else 50
     running_loss = 0
     training_losses = []
     valid_losses = []
