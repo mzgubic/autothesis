@@ -3,6 +3,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import matplotlib as mpl
 mpl.use('agg')
@@ -10,7 +11,77 @@ import matplotlib.pyplot as plt
 import pickle
 import generate
 from model import CharacterModel
+import utils
 from pathlib import Path
+
+
+def compute_KL_div(model, base_batch, repl_batch, keep_depth, vocab):
+
+    # keep the last keep_depth characters from batch, replace the previous ones
+    new_batch = np.array(base_batch)
+    new_batch[:, :-keep_depth] = repl_batch[:, :-keep_depth]
+
+    if keep_depth == 0:
+        new_batch = repl_batch
+
+    # predictions
+    t_base = torch.Tensor(generate.one_hot_encode(base_batch, vocab))
+    base_distr = F.softmax(model(t_base), dim=1).detach()
+    t_new = torch.Tensor(generate.one_hot_encode(new_batch, vocab))
+    new_distr = F.softmax(model(t_new), dim=1).detach()
+
+    # compute KL divergence
+    kl_div = float(F.kl_div(torch.log(base_distr), new_distr, reduction='batchmean'))
+
+    return kl_div
+
+
+def plot_correlations(loc):
+
+    # load settings
+    model_dir = Path(loc)
+    settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
+    cell = settings['cell']
+    hidden_size = settings['hidden_size']
+    token = settings['token']
+    small = settings['small']
+    max_len = settings['max_len']
+
+    # load the final model
+    vocab = generate.get_vocab(token, small)
+    fnames = os.listdir(model_dir/'checkpoints')
+    fname = fnames[-1]
+
+    # load the model
+    model = CharacterModel(cell, hidden_size, vocab)
+    model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
+    model.eval()
+
+    # prepare the base and replacement batch
+    N = 100
+    gen = generate.generate('valid', token=token, max_len=max_len, small=small, batch_size=N)
+    base_batch, _ = next(gen)
+    repl_batch, _ = next(gen)
+   
+    # compute the average KL divs over the batch
+    depths = [i for i in range(max_len)]
+    kl_divs = [compute_KL_div(model, base_batch, repl_batch, keep_depth, vocab) for keep_depth in depths]
+
+    # save the value
+
+
+    # make the plot
+    fig, ax = plt.subplots()
+    ax.plot(depths, kl_divs, 'tomato')
+    ax.plot(depths, [0.01]*len(depths), 'k')
+    ax.set_yscale('log')
+    ax.set_ylim(0.0001, 10)
+    ax.set_xlim(0, max_len)
+    ax.set_title('KL div. between predictions')
+    ax.set_xlabel('sequence keep-depth')
+    ax.set_ylabel('KL divergence')
+    plt.savefig(model_dir/'Correlations.pdf')
+    
 
 def plot_losses(loc):
 
@@ -133,6 +204,8 @@ if __name__ == '__main__':
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
 
+    plot_correlations(args.input_dir)
+    exit()
     if args.verbose:
         freestyle(args.input_dir)
     plot_losses(args.input_dir)
