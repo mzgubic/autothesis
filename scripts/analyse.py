@@ -6,19 +6,20 @@ import itertools
 
 def main():
 
-    # show 
+    # as a function of hidden size
     x = 'hidden_size'
     kind = 'cell'
     cut = 'max_len'
-    cut_vals = [10, 20, 50, 100]
+    cut_vals = [20, 50, 100]
     for cut_val in cut_vals:
         plot_time(x, kind, cut, cut_val)
         plot_best_accuracies(x, kind, cut, cut_val)
 
-    x = 'hidden_size'
-    kind = 'max_len'
-    cut = 'cell'
-    cut_vals = ['RNN', 'GRU', 'LSTM']
+    # as a function of max len
+    x = 'max_len'
+    kind = 'cell'
+    cut = 'hidden_size'
+    cut_vals = [32, 64, 128]
     for cut_val in cut_vals:
         plot_time(x, kind, cut, cut_val)
         plot_best_accuracies(x, kind, cut, cut_val)

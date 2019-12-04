@@ -93,6 +93,7 @@ def freestyle(loc):
     # load data
     model_dir = Path(loc)
     settings = pickle.load(open(model_dir/'settings.pkl', 'rb'))
+    print(settings)
 
     # settings 
     cell = settings['cell']
@@ -100,27 +101,29 @@ def freestyle(loc):
     token = settings['token']
     small = settings['small']
     how_many = 100
-    temperature = 0.5
 
     # load the models
     vocab = generate.get_vocab(token, small)
-    for i, fname in enumerate(os.listdir(model_dir/'checkpoints')):
+    fnames = os.listdir(model_dir/'checkpoints')
+    fname = fnames[-1]
 
-        # load the model
-        model = CharacterModel(cell, hidden_size, vocab)
-        model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
-        model.eval()
+    # load the model
+    model = CharacterModel(cell, hidden_size, vocab)
+    model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
+    model.eval()
 
-        # monitor progress
-        monitor = ['\n{}/{} '.format((i+1))]
-        monitor.append(model.compose('The Standard Mo', temperature, how_many))
-        monitor.append(model.compose('[23] ATLAS Co', temperature, how_many))
-        monitor.append(model.compose('[15] S. Wein', temperature, how_many))
-        monitor.append(model.compose('s = ', temperature, how_many))
+    # monitor 
+    sents = ['The Standard Mo', 'non-abelia', 'silicon pixel det', 'estimate the t', '[23] ATLAS Co']
+    temperatures = [0.3 + 0.1*i for i in range(6)]
+    eval_stream =  model_dir/'evaluate_stream.txt'
 
-        for m in monitor:
-            utils.report(m, model_dir/'evaluate_stream.txt')
-    
+    for temperature in temperatures:
+        txt = '\nTemperature = {}'.format(temperature)
+        utils.report(txt, eval_stream)
+        for sent in sents:
+            txt = model.compose(sent, temperature, how_many)
+            utils.report(txt, eval_stream)
+
 
 if __name__ == '__main__':
     
