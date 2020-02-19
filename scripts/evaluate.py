@@ -15,7 +15,7 @@ import utils
 from pathlib import Path
 
 
-def compute_KL_div(model, base_batch, repl_batch, keep_depth, vocab):
+def distributions(model, base_batch, repl_batch, keep_depth, vocab):
 
     # keep the last keep_depth characters from batch, replace the previous ones
     new_batch = np.array(base_batch)
@@ -29,14 +29,24 @@ def compute_KL_div(model, base_batch, repl_batch, keep_depth, vocab):
     base_distr = F.softmax(model(t_base), dim=1).detach()
     t_new = torch.Tensor(generate.one_hot_encode(new_batch, vocab))
     new_distr = F.softmax(model(t_new), dim=1).detach()
-
-    # compute KL divergence
-    kl_div = float(F.kl_div(torch.log(base_distr), new_distr, reduction='batchmean'))
-
-    return kl_div
+    
+    return base_distr, new_distr
 
 
-def plot_correlations(loc):
+def compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab):
+
+    base_distr, new_distr = distributions(model, base_batch, repl_batch, keep_depth, vocab)
+    base_argmax = np.argmax(base_distr.numpy(), axis=1)
+    new_argmax = np.argmax(new_distr.numpy(), axis=1)
+
+    n_total = len(base_argmax)
+    n_same = sum(base_argmax == new_argmax)
+    switch_prob = (n_total - n_same) / n_total
+
+    return switch_prob
+
+
+def plot_switch_prob(loc):
 
     # load settings
     model_dir = Path(loc)
@@ -65,22 +75,20 @@ def plot_correlations(loc):
    
     # compute the average KL divs over the batch
     depths = [i for i in range(max_len)]
-    kl_divs = [compute_KL_div(model, base_batch, repl_batch, keep_depth, vocab) for keep_depth in depths]
-
-    # save the value
-
+    switch_probs = [compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab) for keep_depth in depths]
 
     # make the plot
     fig, ax = plt.subplots()
-    ax.plot(depths, kl_divs, 'tomato')
+    ax.plot(depths, switch_probs, 'tomato')
     ax.plot(depths, [0.01]*len(depths), 'k')
     ax.set_yscale('log')
-    ax.set_ylim(0.0001, 10)
+    ax.set_ylim(0.001, 1)
     ax.set_xlim(0, max_len)
-    ax.set_title('KL div. between predictions')
+    ax.set_title('Probability of switching predicted character\n{}'.format(model_dir.name), fontsize=7)
     ax.set_xlabel('sequence keep-depth')
-    ax.set_ylabel('KL divergence')
-    plt.savefig(model_dir/'Correlations.pdf')
+    ax.set_ylabel('Probabillity')
+    ax.grid()
+    plt.savefig(model_dir/'SwitchProbability.pdf')
     
 
 def plot_losses(loc):
@@ -154,7 +162,7 @@ def plot_losses(loc):
         upper = ax.get_ylim()[1] if description == 'Loss' else 1
         ax.set_ylim(0, upper)
         ax.set_xlim(0, ax.get_xlim()[1])
-        ax.set_title(model_dir.name, fontsize=8)
+        ax.set_title(model_dir.name, fontsize=7)
         ax.legend()
         ax.grid(alpha=0.5, which='both')
         plt.savefig(model_dir/'{}.pdf'.format(description))
@@ -185,7 +193,7 @@ def freestyle(loc):
 
     # monitor 
     sents = ['The Standard Mo', 'non-abelia', 'silicon pixel det', 'estimate the t', '[23] ATLAS Co']
-    temperatures = [0.3 + 0.1*i for i in range(6)]
+    temperatures = [0.01 + 0.1*i for i in range(11)]
     eval_stream =  model_dir/'evaluate_stream.txt'
 
     for temperature in temperatures:
@@ -203,9 +211,9 @@ if __name__ == '__main__':
     parser.add_argument('--input-dir', default=default)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
+    print(args)
 
-    plot_correlations(args.input_dir)
-    exit()
+    plot_switch_prob(args.input_dir)
     if args.verbose:
         freestyle(args.input_dir)
     plot_losses(args.input_dir)
