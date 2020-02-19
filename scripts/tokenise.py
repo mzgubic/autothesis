@@ -50,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--val_frac', type=float, default=0.1)
     parser.add_argument('--test_frac', type=float, default=0.1)
     parser.add_argument('--small', action='store_true')
+    parser.add_argument('--threshold', type=int, default=300, help='Minimum frequency of tokens to be kept (otherwise: <unk>)')
     args = parser.parse_args()
 
     # some helpers
@@ -57,21 +58,37 @@ if __name__ == '__main__':
     sweep_tokens = sweep_words if args.token == 'word' else sweep_chars
 
     # first sweep to build the vocabulary
-    print('First sweep to build the vocabulary')
+    print('First sweep to build the vocabulary and count entries')
     lines = sweep_lines(fpath)
     tokens = sweep_tokens(lines)
 
     token2idx = {'<unk>':0}
+    token_counts = {t:0 for t in token2idx}
     total_size = 0
     for i, token in enumerate(tokens):
 
         # add to vocab if not there already
-        if token not in token2idx:
+        if token in token2idx:
+            token_counts[token] += 1
+        else:
             token2idx[token] = len(token2idx)
+            token_counts[token] = 1
 
         total_size += 1
         if i>=10000 and args.small:
             break
+
+    # for word tokens, reduce the number of tokens
+    if args.token == 'word':
+        word2idx = {'<unk>':0}
+        for token in token_counts:
+            # if frequent, add as a separate token
+            if token_counts[token] > args.threshold:
+                word2idx[token] = len(word2idx)
+            # otherwise merge with '<unk>' token
+            else:
+                word2idx[token] = 0
+    token2idx = word2idx
 
     # second sweep to fill the output arrays
     print('Second sweep to fill the output arrays')
@@ -89,7 +106,6 @@ if __name__ == '__main__':
     splits = [train, val, test]
 
     split_idx, current_idx = 0, 0
-    token_counts = {t:0 for t in token2idx}
     for i, token in enumerate(tokens):
 
         # add the token
@@ -101,12 +117,8 @@ if __name__ == '__main__':
             split_idx+=1
             current_idx=0
 
-        # for words, keep track of the numbers
-        token_counts[token] += 1
-
         if i>=10000 and args.small:
             break
-
 
     # save the vocab and output arrays
     out_path = utils.data_path/'tokens'/args.token
@@ -132,8 +144,5 @@ if __name__ == '__main__':
     print(train)
     print(token2idx)
     print(total_size)
-    s = pd.Series(token_counts)
-    s.sort_values(inplace=True, ascending=False)
-    cs = s.cumsum()
 
 

@@ -73,6 +73,7 @@ class Vocab():
 
         self.t2i = token_to_idx
         self.i2t = {token_to_idx[k]:k for k in token_to_idx}
+        self.i2t[0] = '<unk>'
         self.size = len(token_to_idx)
 
     def __getitem__(self, key):
