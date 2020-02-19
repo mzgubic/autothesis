@@ -4,6 +4,7 @@ import json
 import os
 import h5py
 import numpy as np
+import pandas as pd
 import pickle
 import utils
 import nltk
@@ -60,16 +61,16 @@ if __name__ == '__main__':
     lines = sweep_lines(fpath)
     tokens = sweep_tokens(lines)
 
-    token_to_idx = {'<unk>':0}
+    token2idx = {'<unk>':0}
     total_size = 0
     for i, token in enumerate(tokens):
 
         # add to vocab if not there already
-        if token not in token_to_idx:
-            token_to_idx[token] = len(token_to_idx)
+        if token not in token2idx:
+            token2idx[token] = len(token2idx)
 
         total_size += 1
-        if i>=1000 and args.small:
+        if i>=10000 and args.small:
             break
 
     # second sweep to fill the output arrays
@@ -81,17 +82,18 @@ if __name__ == '__main__':
     test_size = int(args.test_frac * total_size)
     train_size = total_size - val_size - test_size
 
-    dtype = int if len(token_to_idx) > 255 else np.uint8
+    dtype = int if len(token2idx) > 255 else np.uint8
     val = np.zeros(val_size, dtype)
     test = np.zeros(test_size, dtype)
     train = np.zeros(train_size, dtype)
     splits = [train, val, test]
 
     split_idx, current_idx = 0, 0
+    token_counts = {t:0 for t in token2idx}
     for i, token in enumerate(tokens):
 
         # add the token
-        splits[split_idx][current_idx] = token_to_idx[token]
+        splits[split_idx][current_idx] = token2idx[token]
         current_idx+=1
 
         # go to next split
@@ -99,7 +101,10 @@ if __name__ == '__main__':
             split_idx+=1
             current_idx=0
 
-        if i>=1000 and args.small:
+        # for words, keep track of the numbers
+        token_counts[token] += 1
+
+        if i>=10000 and args.small:
             break
 
 
@@ -115,18 +120,20 @@ if __name__ == '__main__':
         f.create_dataset('test', data=test)
 
     # easy to read vocab
-    json_data = token_to_idx
+    json_data = token2idx
     with open(out_path/'{}_vocab.json'.format('small' if args.small else 'full'), 'w') as f:
         json.dump(json_data, f)
 
     # pickle vocab
-    vocab = Vocab(token_to_idx)
+    vocab = Vocab(token2idx)
     with open(out_path/'{}_vocab.pkl'.format('small' if args.small else 'full'), 'wb') as f:
         pickle.dump(vocab, f)
 
     print(train)
-    print(token_to_idx)
+    print(token2idx)
     print(total_size)
-
+    s = pd.Series(token_counts)
+    s.sort_values(inplace=True, ascending=False)
+    cs = s.cumsum()
 
 
