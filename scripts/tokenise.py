@@ -8,7 +8,7 @@ import utils
 from generate import Vocab
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--tokens', default='character', choices=['character', 'word'])
+parser.add_argument('--token', default='character', choices=['character', 'word'])
 parser.add_argument('--input_txt', default='ZZZ_combined_theses.txt')
 parser.add_argument('--val_frac', type=float, default=0.1)
 parser.add_argument('--test_frac', type=float, default=0.1)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                 break
 
     # save the vocab and output arrays
-    out_path = utils.data_path/'tokens'/args.tokens
+    out_path = utils.data_path/'tokens'/args.token
     if not os.path.exists(out_path):
         os.makedirs(out_path)
 

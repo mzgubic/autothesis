@@ -179,6 +179,7 @@ if __name__ == '__main__':
 
     # settings
     settings = {a:getattr(args, a) for a in dir(args) if a[0] != '_'}
+    print(settings)
 
     # model dir
     model_dir = utils.model_dir_name(settings)
