@@ -1,3 +1,4 @@
+import time
 import os
 from pathlib import Path
 
@@ -25,3 +26,10 @@ def report(txt, fpath):
         handle.write(txt + '\n')
 
     
+def timeit(f):
+    def decorated(*args, **kwargs):
+        t0 = time.time()
+        r = f(*args, **kwargs)
+        print(' --> {} took {:2.2f}s'.format(f.__name__, time.time() - t0))
+        return r
+    return decorated
