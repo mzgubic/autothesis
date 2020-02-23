@@ -171,14 +171,14 @@ def one_hot_decode(array):
 def main():
 
     max_len = 20
-    token = 'character'
+    token = 'word'
     small = False
     vocab = get_vocab(token, small)
 
     for batch, labels in generate('train', token=token, max_len=max_len, small=small):
         print(batch)
         #print(labels)
-        #print(int2str(batch, vocab))
+        print(int2str(batch, vocab))
         #print(int2str(labels, vocab))
         #one_hot_batch = one_hot_encode(batch, vocab)
         #new_batch = one_hot_decode(one_hot_batch)
