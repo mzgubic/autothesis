@@ -62,7 +62,7 @@ def index(tokens):
         # add to index array
         idx_list.append(token2idx[token])
 
-        if i>=100000 and args.small:
+        if i>=1e7 and args.small:
             break
 
     return token2idx, token_counts, np.array(idx_list)
@@ -74,34 +74,30 @@ def reduce_tokens(token2idx, token_counts, idx_array, args):
     # identify keeper tokens
     common_tokens = ['<unk>'] + [token for token in token_counts if token_counts[token] > args.threshold]
 
-    # prepare the outputs
-    t2i = {'<unk>':0}
-    tc = {t:0 for t in common_tokens}
-    array = np.zeros(len(idx_array))
-
-    # create the mapping from old to new indices
-    mapping = {}
+    # create the new indices
+    new_t2i = {'<unk>':0}
     for token in common_tokens:
         if token == '<unk>':
             continue
-        t2i[token] = len(t2i)
-        mapping[token2idx[token]] = t2i[token]
+        new_t2i[token] = len(new_t2i)
 
     # loop over idx_array and apply the map
-    i2t = {token2idx[t]:t for t in token2idx}
+    index2token = {token2idx[t]:t for t in token2idx}
+    tc = {t:0 for t in common_tokens}
+    array = np.zeros(len(idx_array))
     for i, idx in enumerate(idx_array):
 
         # change token to <unk> if not common
-        token = i2t[idx]
-        token = token if token in common_tokens else '<unk>'
+        token = index2token[idx]
+        token = token if token_counts[token] > args.threshold else '<unk>'
 
         # update the array
-        array[i] = t2i[token] 
+        array[i] = new_t2i[token] 
 
         # update the counts
         tc[token] += 1
     
-    return t2i, tc, array
+    return new_t2i, tc, array
 
 
 @utils.timeit
@@ -131,7 +127,7 @@ def phrasify(token2idx, token_counts, idx_array):
     bigram_scores = {ft:{st:0 for st in bigram_counts[ft]} for ft in bigram_counts}
     for first in bigram_counts:
         for second in bigram_counts[first]:
-            score = (bigram_counts[first][second] - delta) / (token_counts[first] * token_counts[second])**0.5
+            score = (bigram_counts[first][second] - delta) / (token_counts[first] * token_counts[second])
             bigram_scores[first][second] = score
 
     # keep good phrases (above threshold ones)
@@ -243,14 +239,14 @@ if __name__ == '__main__':
     if args.token == 'word':
 
         # identify phrases and merge the individual word tokens into phrases
-        print('Identifying phrases')
-        for _ in range(args.phrase_runs):
-            token2idx, token_counts, idx_array = phrasify(token2idx, token_counts, idx_array)
+        #print('Identifying phrases')
+        #for _ in range(args.phrase_runs):
+        #    token2idx, token_counts, idx_array = phrasify(token2idx, token_counts, idx_array)
         
         # remove rare words
-        show_first(40, token2idx, idx_array)
+        show_first(400, token2idx, idx_array)
         token2idx, token_counts, idx_array = reduce_tokens(token2idx, token_counts, idx_array, args)
-        show_first(40, token2idx, idx_array)
+        show_first(40000, token2idx, idx_array)
 
     # split arrays
     print('Split the tokens into training, validation, and test sets')
@@ -259,10 +255,10 @@ if __name__ == '__main__':
     # save the array
     save_tokens(train, val, test, token2idx, args)
 
-    for length in range(args.phrase_runs):
-        print()
-        phrases = [p for p in token2idx if p.count(' ') > length]
-        for p in phrases:
-            print(p)
+    #for length in range(args.phrase_runs):
+    #    print()
+    #    phrases = [p for p in token2idx if p.count(' ') > length]
+    #    for p in phrases:
+    #        print(p)
 
 
