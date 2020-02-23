@@ -69,6 +69,42 @@ def index(tokens):
 
 
 @utils.timeit
+def reduce_tokens(token2idx, token_counts, idx_array, args):
+
+    # identify keeper tokens
+    common_tokens = ['<unk>'] + [token for token in token_counts if token_counts[token] > args.threshold]
+
+    # prepare the outputs
+    t2i = {'<unk>':0}
+    tc = {t:0 for t in common_tokens}
+    array = np.zeros(len(idx_array))
+
+    # create the mapping from old to new indices
+    mapping = {}
+    for token in common_tokens:
+        if token == '<unk>':
+            continue
+        t2i[token] = len(t2i)
+        mapping[token2idx[token]] = t2i[token]
+
+    # loop over idx_array and apply the map
+    i2t = {token2idx[t]:t for t in token2idx}
+    for i, idx in enumerate(idx_array):
+
+        # change token to <unk> if not common
+        token = i2t[idx]
+        token = token if token in common_tokens else '<unk>'
+
+        # update the array
+        array[i] = t2i[token] 
+
+        # update the counts
+        tc[token] += 1
+    
+    return t2i, tc, array
+
+
+@utils.timeit
 def phrasify(token2idx, token_counts, idx_array):
     """
     Build phrases based on the score:
@@ -178,7 +214,7 @@ def save_tokens(train, val, test, token2idx, args):
 def show_first(n, token2idx, idx_array):
     i2t = {token2idx[k]:k for k in token2idx}
     i2t[0] = '<unk>'
-    test_text = ' '.join([i2t[i] for i in idx_array[:20]])
+    test_text = ' '.join([i2t[i] for i in idx_array[:n]])
     print(test_text)
 
 if __name__ == '__main__':
@@ -189,7 +225,7 @@ if __name__ == '__main__':
     parser.add_argument('--val-frac', type=float, default=0.1)
     parser.add_argument('--test-frac', type=float, default=0.1)
     parser.add_argument('--small', action='store_true')
-    #parser.add_argument('--threshold', type=int, default=300, help='Minimum frequency of tokens to be kept (otherwise: <unk>)') # reducing tokens handled differently
+    parser.add_argument('--threshold', type=int, default=300, help='Minimum frequency of tokens to be kept (otherwise: <unk>)')
     parser.add_argument('--phrase-runs', type=int, default=2, help='Max phrase length')
     args = parser.parse_args()
 
@@ -210,6 +246,11 @@ if __name__ == '__main__':
         print('Identifying phrases')
         for _ in range(args.phrase_runs):
             token2idx, token_counts, idx_array = phrasify(token2idx, token_counts, idx_array)
+        
+        # remove rare words
+        show_first(40, token2idx, idx_array)
+        token2idx, token_counts, idx_array = reduce_tokens(token2idx, token_counts, idx_array, args)
+        show_first(40, token2idx, idx_array)
 
     # split arrays
     print('Split the tokens into training, validation, and test sets')
@@ -223,9 +264,5 @@ if __name__ == '__main__':
         phrases = [p for p in token2idx if p.count(' ') > length]
         for p in phrases:
             print(p)
-
-    print(test[:20])
-    print(val[:20])
-    print(train[:20])
 
 
