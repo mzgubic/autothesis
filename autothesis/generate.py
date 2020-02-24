@@ -97,6 +97,26 @@ class Vocab():
         
         return 'Vocab({})'.format(self.t2i)
 
+    def int2str(self, array):
+        """
+        Transform the array of indices in an array of tokens.
+    
+        Arguments:
+            array (np.array (int)): array of indices
+            token (string): character or word
+    
+        Returns:
+            text (np.array (str)): array of tokens corresponding to indices
+        """
+    
+        # convert to string array
+        array = np.array(array)
+        text = array.astype(str)
+    
+        decode = np.vectorize(lambda x: self[int(x)])
+        text = decode(text)
+    
+        return text
 
 
 def get_vocab(token, small=False):
@@ -118,28 +138,6 @@ def get_vocab(token, small=False):
         vocab = pickle.load(f)
     
     return vocab
-
-
-def int2str(array, vocab):
-    """
-    Transform the array of indices in an array of tokens.
-
-    Arguments:
-        array (np.array (int)): array of indices
-        token (string): character or word
-
-    Returns:
-        text (np.array (str)): array of tokens corresponding to indices
-    """
-
-    # convert to string array
-    array = np.array(array)
-    text = array.astype(str)
-
-    decode = np.vectorize(lambda x: vocab[int(x)])
-    text = decode(text)
-
-    return text
 
 
 def one_hot_encode(array, vocab):
@@ -178,8 +176,7 @@ def main():
     for batch, labels in generate('train', token=token, max_len=max_len, small=small):
         print(batch)
         #print(labels)
-        print(int2str(batch, vocab))
-        #print(int2str(labels, vocab))
+        print(vocab.int2str(batch))
         #one_hot_batch = one_hot_encode(batch, vocab)
         #new_batch = one_hot_decode(one_hot_batch)
         #one_hot_labels = one_hot_encode(labels, vocab)

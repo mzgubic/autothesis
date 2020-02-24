@@ -65,7 +65,7 @@ def index(tokens):
         if i>=1e7 and args.small:
             break
 
-    return token2idx, token_counts, np.array(idx_list)
+    return token2idx, token_counts, np.array(idx_list, dtype=int)
 
 
 @utils.timeit
@@ -84,7 +84,7 @@ def reduce_tokens(token2idx, token_counts, idx_array, args):
     # loop over idx_array and apply the map
     index2token = {token2idx[t]:t for t in token2idx}
     tc = {t:0 for t in common_tokens}
-    array = np.zeros(len(idx_array))
+    array = np.zeros(len(idx_array), dtype=int)
     for i, idx in enumerate(idx_array):
 
         # change token to <unk> if not common
