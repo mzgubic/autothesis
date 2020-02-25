@@ -180,6 +180,25 @@ def get_embedding(algorithm):
     return model
 
 
+def w2v_encode(array, emb, vocab):
+
+    # create out array
+    batch_size = array.shape[0]
+    seq_len = array.shape[1]
+    emb_size = emb.vectors.shape[1]
+    out_array = np.zeros([batch_size, seq_len, emb_size])
+
+    # text array as input
+    txt_array = vocab.int2str(array)
+
+    # loop over the array and get vector for each token
+    for i, j in itertools.product(range(batch_size), range(seq_len)):
+        token = txt_array[i,j]
+        out_array[i,j,:] = emb.get_vector(token)
+
+    return out_array
+
+
 def one_hot_encode(array, vocab):
 
     # flatten the original array
@@ -215,6 +234,7 @@ def main():
 
     for batch, labels in generate('train', token=token, max_len=max_len, small=small):
         print(batch)
+        print(batch.shape)
         #print(labels)
         print(vocab.int2str(batch))
         #one_hot_batch = one_hot_encode(batch, vocab)
@@ -223,6 +243,12 @@ def main():
         #new_labels = one_hot_decode(one_hot_labels)
         #print(new_batch)
         #print(new_labels)
+
+        emb = get_embedding('word2vec')
+        print()
+        print('encoding')
+        batch = w2v_encode(batch, emb, vocab)
+        print(batch.shape)
         
         print('new batch')
         break
