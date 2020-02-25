@@ -1,8 +1,40 @@
+import re
 import numpy as np
 import pickle
 import h5py
+import itertools
 import word2vec
 import utils
+
+
+def sweep_lines(fpath):
+    with open(fpath, 'r') as handle:
+        for line in handle:
+            yield line[:-1]
+
+
+def yield_words(lines):
+    """
+    Yield the word tokens
+    """
+
+    # separate into tokens based on whitespace
+    tokens = (t for line in lines for t in line.split())
+
+    # and separate tokens into alpha, numeric, and other characters
+    tokens = (subtoken.lower() for t in tokens for subtoken in re.split('(\W)', t) if subtoken != '')
+
+    for token in tokens:
+        yield token
+
+
+def yield_chars(lines):
+    """
+    Yield the character tokens
+    """
+    for line in lines:
+        for char in line:
+            yield char
 
 
 def get_n_batches_in_epoch(split, token, batch_size, max_len, small):
