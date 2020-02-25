@@ -10,11 +10,9 @@ import generate
 
 class LanguageModel(nn.Module):
 
-    def __init__(self, token, cell, input_size, hidden_size, output_size, vocab, emb):
+    def __init__(self, cell, input_size, hidden_size, output_size):
 
         super(LanguageModel, self).__init__()
-        self.token = token
-        self.vocab = vocab
 
         # parameters
         self.cell = cell
@@ -42,67 +40,12 @@ class LanguageModel(nn.Module):
 
         return output
 
-    def str2batch(self, intxt):
-        """
-        Turn a string of characters to a batch ready to be processed.
-
-        Arguments:
-            intxt (string): string to be translated
-
-        Returns:
-            batch (torch.Tensor): (1, len(intxt), vocab_size)
-        """
-
-        if self.token == 'character':
-            inds = np.array([self.vocab[char] for char in intxt])
-            inds = generate.one_hot_encode(inds, self.vocab)
-            batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
-        elif self.token == 'word':
-            tokens = np.array([t for t in generate.yield_words([intxt])])
-            batch = 
-            batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
-
-        return batch
-
-    def compose(self, intxt, temperature, how_many):
-        """
-        Continue the paragraph given starting text.
-
-        Arguments:
-            intxt (string):      string to be continued by the model
-            temperature (float): "temperature" which adds uncertainty to sampling
-            how_many (int):      how many characters to add
-
-        Returns:
-            txt (string):        continued string
-        """
-            
-        txt = intxt
-
-        # predict new characters
-        for i in range(how_many):
-
-            # output of the network
-            print(txt)
-            batch = self.str2batch(txt)
-            print(batch.shape)
-            output = self(batch)
-    
-            # construct the distribution
-            distribution = F.softmax(output/temperature, dim=1).detach().numpy().flatten()
-    
-            # and sample from it
-            sample = np.random.choice(np.arange(self.vocab.size), p=distribution)
-            new_char = self.vocab[int(sample)]
-            txt = txt+new_char
-
-        return txt
-
 
 if __name__ == '__main__':
 
     # settings
-    token = 'word'
+    #token = 'word'
+    token = 'character'
     max_len = 20
     hidden_size = 16
     small = False
@@ -119,10 +62,11 @@ if __name__ == '__main__':
         input_size = emb.vectors.shape[1]
         output_size = emb.vectors.shape[0]
     elif token == 'character':
-        input_size = None
-        output_size = None # TODO
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
 
-    model = LanguageModel(token, 'RNN', input_size, hidden_size, output_size, vocab, emb)
+    model = LanguageModel('RNN', input_size, hidden_size, output_size)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
@@ -160,8 +104,7 @@ if __name__ == '__main__':
             print('{}/{} done'.format(i+1, total_n))
             losses.append(running_loss/every_n)
             running_loss = 0
-            print(model)
-            print(model.compose('The Standard Model of ', temperature, how_many))
+            print(generate.compose(model, vocab, emb, 'The Standard Model of ', temperature, how_many))
 
         if i >= total_n:
             break

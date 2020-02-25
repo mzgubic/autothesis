@@ -4,6 +4,8 @@ import pickle
 import h5py
 import itertools
 import word2vec
+import torch
+import torch.nn.functional as F
 import utils
 
 
@@ -172,6 +174,60 @@ def get_vocab(token, small=False):
     
     return vocab
 
+
+def str2batch(intxt, vocab, emb):
+    """
+    Turn a string of characters to a batch ready to be processed.
+
+    Arguments:
+        intxt (string): string to be translated
+
+    Returns:
+        batch (torch.Tensor): (1, len(intxt), vocab_size)
+    """
+
+    # token == character
+    if emb == None:
+        inds = np.array([vocab[char] for char in intxt])
+        inds = one_hot_encode(inds, vocab)
+        batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
+    # token == word
+    else:
+        #tokens = np.array([t for t in generate.yield_words([intxt])])
+        batch = None
+        #batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
+
+    return batch
+
+def compose(model, vocab, emb, txt, temperature, how_many):
+    """
+    Continue the paragraph given starting text.
+
+    Arguments:
+        txt (string):      string to be continued by the model
+        temperature (float): "temperature" which adds uncertainty to sampling
+        how_many (int):      how many characters to add
+
+    Returns:
+        txt (string):        continued string
+    """
+        
+    # predict new characters
+    for i in range(how_many):
+
+        # output of the network
+        batch = str2batch(txt, vocab, emb)
+        output = model(batch)
+
+        # construct the distribution
+        distribution = F.softmax(output/temperature, dim=1).detach().numpy().flatten()
+
+        # and sample from it
+        sample = np.random.choice(np.arange(vocab.size), p=distribution)
+        new_char = vocab[int(sample)]
+        txt = txt+new_char
+    
+    return txt
 
 def get_embedding(algorithm):
 
