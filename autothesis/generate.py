@@ -1,6 +1,7 @@
 import numpy as np
 import pickle
 import h5py
+import word2vec
 import utils
 
 
@@ -138,6 +139,13 @@ def get_vocab(token, small=False):
         vocab = pickle.load(f)
     
     return vocab
+
+
+def get_embedding(algorithm):
+
+    fpath = utils.data_path / 'embeddings' / algorithm / 'w2v_model.bin'
+    model = word2vec.load(str(fpath))
+    return model
 
 
 def one_hot_encode(array, vocab):
