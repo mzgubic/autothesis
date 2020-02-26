@@ -44,8 +44,8 @@ class LanguageModel(nn.Module):
 if __name__ == '__main__':
 
     # settings
-    #token = 'word'
-    token = 'character'
+    token = 'word'
+    #token = 'character'
     max_len = 20
     hidden_size = 16
     small = False

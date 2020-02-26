@@ -193,9 +193,11 @@ def str2batch(intxt, vocab, emb):
         batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
     # token == word
     else:
-        #tokens = np.array([t for t in generate.yield_words([intxt])])
-        batch = None
-        #batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
+        tokens = [t for t in yield_words([intxt])]
+        batch = np.zeros((1, len(tokens), emb.vectors.shape[1]))
+        for i in range(len(tokens)):
+            batch[0, i, :] = emb.get_vector(tokens[i])
+        batch = torch.Tensor(batch)
 
     return batch
 
@@ -223,9 +225,20 @@ def compose(model, vocab, emb, txt, temperature, how_many):
         distribution = F.softmax(output/temperature, dim=1).detach().numpy().flatten()
 
         # and sample from it
-        sample = np.random.choice(np.arange(vocab.size), p=distribution)
-        new_char = vocab[int(sample)]
-        txt = txt+new_char
+        # token == 'character'
+        if emb == None:
+            sample = np.random.choice(np.arange(vocab.size), p=distribution)
+            new = vocab[int(sample)]
+            txt = txt+new
+        # token == 'word'
+        else:
+            sample = np.random.choice(np.arange(emb.vectors.shape[0]), p=distribution)
+            new = vocab[int(sample)]
+            while new == '<unk>':
+                sample = np.random.choice(np.arange(emb.vectors.shape[0]), p=distribution)
+                new = vocab[int(sample)]
+                
+            txt = txt+' '+new
     
     return txt
 
