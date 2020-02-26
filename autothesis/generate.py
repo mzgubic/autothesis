@@ -234,9 +234,15 @@ def compose(model, vocab, emb, txt, temperature, how_many):
         else:
             sample = np.random.choice(np.arange(emb.vectors.shape[0]), p=distribution)
             new = vocab[int(sample)]
-            while new == '<unk>':
+
+            # try to resample to get rid of <unk> predictions, otherwise use "the"
+            n_attempts = 0
+            while new == '<unk>' and n_attempts < 5:
                 sample = np.random.choice(np.arange(emb.vectors.shape[0]), p=distribution)
                 new = vocab[int(sample)]
+                n_attempts += 1
+            if new == '<unk>':
+                new = 'the'
                 
             txt = txt+' '+new
     
