@@ -47,7 +47,7 @@ def train(settings, model_dir):
         input_size = vocab.size
         output_size = vocab.size
 
-    model = LanguageModel('RNN', input_size, args.hidden_size, output_size)
+    model = LanguageModel(args.cell, input_size, args.hidden_size, output_size)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
