@@ -110,8 +110,20 @@ def plot_losses(loc):
     # load the models
     models = []
     vocab = generate.get_vocab(token, small)
+    if token == 'word':
+        emb = generate.get_embedding('word2vec')
+        input_size = emb.vectors.shape[1]
+        output_size = emb.vectors.shape[0]
+    elif token == 'character':
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
+
     for fname in os.listdir(model_dir/'checkpoints'):
-        model = CharacterModel(cell, hidden_size, vocab)
+        print(input_size, hidden_size, output_size)
+        model = LanguageModel(cell, input_size, hidden_size, output_size)
+        for p in model.parameters():
+            print(p.shape)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
         models.append(model)
@@ -123,7 +135,14 @@ def plot_losses(loc):
     batch, labels = {}, {}
     for split in splits:
         for b, l in gens[split]:
-            b = generate.one_hot_encode(b, vocab)
+
+            # one hot encode
+            if token == 'character':
+                b = generate.one_hot_encode(b, vocab)
+            # or embed
+            elif token == 'word':
+                b = generate.w2v_encode(b, emb, vocab)
+
             batch[split], labels[split] = torch.Tensor(b), torch.Tensor(l).long()
             break
 
@@ -183,16 +202,24 @@ def freestyle(loc): # TODO
 
     # load the models
     vocab = generate.get_vocab(token, small)
+    if token == 'word':
+        emb = generate.get_embedding('word2vec')
+        input_size = emb.vectors.shape[1]
+        output_size = emb.vectors.shape[0]
+    elif token == 'character':
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
     fnames = os.listdir(model_dir/'checkpoints')
     fname = fnames[-1]
 
     # load the model
-    model = LanguageModel(cell, hidden_size, vocab)
+    model = LanguageModel(cell, input_size, hidden_size, output_size)
     model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
     model.eval()
 
     # monitor 
-    sents = ['The Standard Mo', 'non-abelia', 'silicon pixel det', 'estimate the t', '[23] ATLAS Co']
+    sents = ['The Standard ', 'non-abelian', 'silicon pixel detector', 'estimate the', '[23] ATLAS']
     temperatures = [0.01 + 0.1*i for i in range(11)]
     eval_stream =  model_dir/'evaluate_stream.txt'
 
@@ -200,20 +227,20 @@ def freestyle(loc): # TODO
         txt = '\nTemperature = {}'.format(temperature)
         utils.report(txt, eval_stream)
         for sent in sents:
-            txt = model.compose(sent, temperature, how_many)
+            txt = generate.compose(model, vocab, emb, sent, temperature, how_many)
             utils.report(txt, eval_stream)
 
 
 if __name__ == '__main__':
     
     parser = argparse.ArgumentParser()
-    default = '/data/atlassmallfiles/users/zgubic/thesis/run/character/debugTrue__cellRNN__hidden_size64__learning_rate0.001__batch_size64__max_len20__n_cores1__n_epochs1'
+    default = '/data/atlassmallfiles/users/zgubic/thesis/run/word/debugTrue__cellRNN__hidden_size64__learning_rate0.001__batch_size64__max_len20__n_cores1__n_epochs1'
     parser.add_argument('--input-dir', default=default)
     parser.add_argument('--verbose', action='store_true')
     args = parser.parse_args()
     print(args)
 
-    plot_switch_prob(args.input_dir)
+    #plot_switch_prob(args.input_dir)
     if args.verbose:
         freestyle(args.input_dir)
-    plot_losses(args.input_dir)
+    #plot_losses(args.input_dir)

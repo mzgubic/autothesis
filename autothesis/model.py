@@ -13,6 +13,7 @@ class LanguageModel(nn.Module):
     def __init__(self, cell, input_size, hidden_size, output_size):
 
         super(LanguageModel, self).__init__()
+        print(cell, input_size, hidden_size, output_size)
 
         # parameters
         self.cell = cell
@@ -23,6 +24,10 @@ class LanguageModel(nn.Module):
         tclass = getattr(torch.nn, self.cell)
         self.rnn = tclass(self.input_size, self.hidden_size, batch_first=True)
         self.dense = torch.nn.Linear(self.hidden_size, output_size)
+        print(self.rnn)
+        print(self.dense)
+        for p in self.parameters():
+            print(p.name, p.shape)
 
     def forward(self, x):
 
