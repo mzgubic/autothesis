@@ -15,7 +15,7 @@ import utils
 from pathlib import Path
 
 
-def distributions(model, base_batch, repl_batch, keep_depth, vocab):
+def distributions(model, base_batch, repl_batch, keep_depth, vocab, emb):
 
     # keep the last keep_depth characters from batch, replace the previous ones
     new_batch = np.array(base_batch)
@@ -24,18 +24,27 @@ def distributions(model, base_batch, repl_batch, keep_depth, vocab):
     if keep_depth == 0:
         new_batch = repl_batch
 
+    # if token == 'character'
+    if emb == None:
+        base_batch = generate.one_hot_encode(base_batch, vocab)
+        new_batch = generate.one_hot_encode(new_batch, vocab)
+    # if token == 'word':
+    else:
+        base_batch = generate.w2v_encode(base_batch, emb, vocab)
+        new_batch =  generate.w2v_encode(new_batch, emb, vocab)
+
     # predictions
-    t_base = torch.Tensor(generate.one_hot_encode(base_batch, vocab))
+    t_base = torch.Tensor(base_batch)
     base_distr = F.softmax(model(t_base), dim=1).detach()
-    t_new = torch.Tensor(generate.one_hot_encode(new_batch, vocab))
+    t_new = torch.Tensor(new_batch)
     new_distr = F.softmax(model(t_new), dim=1).detach()
     
     return base_distr, new_distr
 
 
-def compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab):
+def compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab, emb):
 
-    base_distr, new_distr = distributions(model, base_batch, repl_batch, keep_depth, vocab)
+    base_distr, new_distr = distributions(model, base_batch, repl_batch, keep_depth, vocab, emb)
     base_argmax = np.argmax(base_distr.numpy(), axis=1)
     new_argmax = np.argmax(new_distr.numpy(), axis=1)
 
@@ -59,11 +68,20 @@ def plot_switch_prob(loc):
 
     # load the final model
     vocab = generate.get_vocab(token, small)
+    if token == 'word':
+        emb = generate.get_embedding('word2vec')
+        input_size = emb.vectors.shape[1]
+        output_size = emb.vectors.shape[0]
+    elif token == 'character':
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
+
     fnames = os.listdir(model_dir/'checkpoints')
     fname = fnames[-1]
 
     # load the model
-    model = CharacterModel(cell, hidden_size, vocab)
+    model = LanguageModel(cell, input_size, hidden_size, output_size)
     model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
     model.eval()
 
@@ -75,7 +93,7 @@ def plot_switch_prob(loc):
    
     # compute the average KL divs over the batch
     depths = [i for i in range(max_len)]
-    switch_probs = [compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab) for keep_depth in depths]
+    switch_probs = [compute_switch_prob(model, base_batch, repl_batch, keep_depth, vocab, emb) for keep_depth in depths]
 
     # make the plot
     fig, ax = plt.subplots()
@@ -120,10 +138,7 @@ def plot_losses(loc):
         output_size = vocab.size
 
     for fname in os.listdir(model_dir/'checkpoints'):
-        print(input_size, hidden_size, output_size)
         model = LanguageModel(cell, input_size, hidden_size, output_size)
-        for p in model.parameters():
-            print(p.shape)
         model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
         model.eval()
         models.append(model)
@@ -240,7 +255,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
 
-    #plot_switch_prob(args.input_dir)
+    plot_switch_prob(args.input_dir)
     if args.verbose:
         freestyle(args.input_dir)
-    #plot_losses(args.input_dir)
+    plot_losses(args.input_dir)
