@@ -11,10 +11,10 @@ import numpy as np
 import generate
 import evaluate
 import utils
-from model import CharacterModel
+from model import LanguageModel 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--token', default='character', choices=['character', 'word'])
+parser.add_argument('--token', default='word', choices=['character', 'word'])
 parser.add_argument('--cell', default='RNN', choices=['RNN', 'GRU', 'LSTM'])
 parser.add_argument('--max-len', type=int, default=20)
 parser.add_argument('--hidden-size', type=int, default=64)
@@ -37,8 +37,17 @@ def train(settings, model_dir):
     how_many = 70
     vocab = generate.get_vocab(args.token, small=args.small)
 
-    # build the model
-    model = CharacterModel(args.cell, args.hidden_size, vocab)
+    # create the vocab, model, (and embedding)
+    if args.token == 'word':
+        emb = generate.get_embedding('word2vec')
+        input_size = emb.vectors.shape[1]
+        output_size = emb.vectors.shape[0]
+    elif args.token == 'character':
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
+
+    model = LanguageModel('RNN', input_size, args.hidden_size, output_size)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
@@ -48,7 +57,12 @@ def train(settings, model_dir):
     n_valid = 10000
     valid_gen = generate.generate('valid', token=args.token, max_len=args.max_len, small=args.small, batch_size=n_valid)
     for valid_batch, valid_labels in valid_gen:
-        valid_batch = generate.one_hot_encode(valid_batch, vocab)
+        # one hot encode
+        if args.token == 'character':
+            valid_batch = generate.one_hot_encode(valid_batch, vocab)
+        # or embed
+        elif args.token == 'word':
+            valid_batch = generate.w2v_encode(valid_batch, emb, vocab)
         valid_batch, valid_labels = torch.Tensor(valid_batch), torch.Tensor(valid_labels).long()
         break
 
@@ -79,7 +93,11 @@ def train(settings, model_dir):
         for i, (batch, labels) in enumerate(train_gen):
 
             # one hot encode
-            batch = generate.one_hot_encode(batch, vocab)
+            if args.token == 'character':
+                batch = generate.one_hot_encode(batch, vocab)
+            # or embed
+            elif args.token == 'word':
+                batch = generate.w2v_encode(batch, emb, vocab)
 
             # turn into torch tensors
             batch = torch.Tensor(batch)
@@ -108,7 +126,7 @@ def train(settings, model_dir):
 
                 # monitor progress
                 monitor = ['\n{}/{} done'.format(i+1, batches_per_epoch)]
-                monitor.append(model.compose('The Standard Model of', temperature, how_many))
+                monitor.append(generate.compose(model, vocab, emb, 'The Standard Model of', temperature, how_many))
                 for m in monitor:
                     utils.report(m, out_stream)
                 

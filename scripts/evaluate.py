@@ -10,7 +10,7 @@ mpl.use('agg')
 import matplotlib.pyplot as plt
 import pickle
 import generate
-from model import CharacterModel
+from model import LanguageModel
 import utils
 from pathlib import Path
 
@@ -167,7 +167,7 @@ def plot_losses(loc):
         ax.grid(alpha=0.5, which='both')
         plt.savefig(model_dir/'{}.pdf'.format(description))
 
-def freestyle(loc):
+def freestyle(loc): # TODO
 
     # load data
     model_dir = Path(loc)
@@ -187,7 +187,7 @@ def freestyle(loc):
     fname = fnames[-1]
 
     # load the model
-    model = CharacterModel(cell, hidden_size, vocab)
+    model = LanguageModel(cell, hidden_size, vocab)
     model.load_state_dict(torch.load(model_dir/'checkpoints'/fname))
     model.eval()
 
