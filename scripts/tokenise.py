@@ -1,4 +1,3 @@
-import re
 import time
 import argparse
 import json
@@ -7,38 +6,8 @@ import h5py
 import numpy as np
 import pandas as pd
 import pickle
-from generate import Vocab
+import generate
 import utils
-
-
-def sweep_lines(fpath):
-    with open(fpath, 'r') as handle:
-        for line in handle:
-            yield line[:-1]
-
-
-def sweep_words(lines):
-    """
-    Yield the word tokens
-    """
-
-    # separate into tokens based on whitespace
-    tokens = (t for line in lines for t in line.split())
-
-    # and separate tokens into alpha, numeric, and other characters
-    tokens = (subtoken.lower() for t in tokens for subtoken in re.split('(\W)', t) if subtoken != '')
-
-    for token in tokens:
-        yield token
-
-
-def sweep_chars(lines):
-    """
-    Yield the character tokens
-    """
-    for line in lines:
-        for char in line:
-            yield char
 
 
 @utils.timeit
@@ -203,7 +172,7 @@ def save_tokens(train, val, test, token2idx, args):
         json.dump(json_data, f)
 
     # pickle vocab
-    vocab = Vocab(token2idx)
+    vocab = generate.Vocab(token2idx)
     with open(out_path/'{}_vocab.pkl'.format('small' if args.small else 'full'), 'wb') as f:
         pickle.dump(vocab, f)
 
@@ -227,11 +196,11 @@ if __name__ == '__main__':
 
     # some helpers
     fpath = utils.data_path / 'txts' / args.input_txt
-    sweep_tokens = sweep_words if args.token == 'word' else sweep_chars
+    sweep_tokens = generate.yield_words if args.token == 'word' else generate.yield_chars
 
     # first sweep to build the vocabulary
     print('First sweep to build the vocabulary and count entries')
-    lines = sweep_lines(fpath)
+    lines = generate.sweep_lines(fpath)
     tokens = sweep_tokens(lines)
     token2idx, token_counts, idx_array = index(tokens)
 

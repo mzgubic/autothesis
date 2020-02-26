@@ -4,26 +4,25 @@ import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
-
 import utils
 import generate
 
-class CharacterModel(nn.Module):
 
-    def __init__(self, cell, hidden_size, vocab):
+class LanguageModel(nn.Module):
 
-        super(CharacterModel, self).__init__()
-        self.vocab = vocab
+    def __init__(self, cell, input_size, hidden_size, output_size):
 
-        # embedding parameters
+        super(LanguageModel, self).__init__()
+
+        # parameters
         self.cell = cell
-        self.input_size = self.vocab.size
+        self.input_size = input_size
         self.hidden_size = hidden_size
 
         # layers
         tclass = getattr(torch.nn, self.cell)
         self.rnn = tclass(self.input_size, self.hidden_size, batch_first=True)
-        self.dense = torch.nn.Linear(self.hidden_size, self.vocab.size)
+        self.dense = torch.nn.Linear(self.hidden_size, output_size)
 
     def forward(self, x):
 
@@ -41,72 +40,32 @@ class CharacterModel(nn.Module):
 
         return output
 
-    def str2batch(self, intxt):
-        """
-        Turn a string of characters to a batch ready to be processed.
-
-        Arguments:
-            intxt (string): string to be translated
-
-        Returns:
-            batch (torch.Tensor): (1, len(intxt), vocab_size)
-        """
-
-        inds = np.array([self.vocab[char] for char in intxt])
-        inds = generate.one_hot_encode(inds, self.vocab)
-        batch = torch.unsqueeze(torch.Tensor(inds), dim=0)
-        return batch
-
-    def compose(self, intxt, temperature, how_many):
-        """
-        Continue the paragraph given starting text.
-
-        Arguments:
-            intxt (string):      string to be continued by the model
-            temperature (float): "temperature" which adds uncertainty to sampling
-            how_many (int):      how many characters to add
-
-        Returns:
-            txt (string):        continued string
-        """
-            
-        txt = intxt
-
-        # predict new characters
-        for i in range(how_many):
-
-            # output of the network
-            batch = self.str2batch(txt)
-            output = self(batch)
-    
-            # construct the distribution
-            distribution = F.softmax(output/temperature, dim=1).detach().numpy().flatten()
-    
-            # and sample from it
-            sample = np.random.choice(np.arange(self.vocab.size), p=distribution)
-            new_char = self.vocab[int(sample)]
-            txt = txt+new_char
-
-        return txt
-
 
 if __name__ == '__main__':
 
     # settings
-    token = 'character'
+    token = 'word'
     max_len = 20
     hidden_size = 16
     small = False
 
     # training and sampling
-    total_n = 1000000
+    total_n = 10000
     temperature = 0.5
     how_many = 50
 
+    # create the vocab, model, (and embedding)
     vocab = generate.get_vocab(token, small=small)
+    if token == 'word':
+        emb = generate.get_embedding('word2vec')
+        input_size = emb.vectors.shape[1]
+        output_size = emb.vectors.shape[0]
+    elif token == 'character':
+        emb = None
+        input_size = vocab.size
+        output_size = vocab.size
 
-    # build the model
-    model = CharacterModel('RNN', hidden_size, vocab)
+    model = LanguageModel('RNN', input_size, hidden_size, output_size)
 
     # create criterion and optimiser
     criterion = nn.CrossEntropyLoss()
@@ -119,7 +78,11 @@ if __name__ == '__main__':
     for i, (batch, labels) in enumerate(generate.generate('train', token=token, max_len=max_len, small=small)):
 
         # one hot encode
-        batch = generate.one_hot_encode(batch, vocab)
+        if token == 'character':
+            batch = generate.one_hot_encode(batch, vocab)
+        # or embed
+        elif token == 'word':
+            batch = generate.w2v_encode(batch, emb, vocab)
 
         # turn into torch tensors
         batch = torch.Tensor(batch)
@@ -140,7 +103,7 @@ if __name__ == '__main__':
             print('{}/{} done'.format(i+1, total_n))
             losses.append(running_loss/every_n)
             running_loss = 0
-            print(model.compose('The Standard Model of pa', temperature, how_many))
+            print(generate.compose(model, vocab, emb, 'The Standard Model of ', temperature, how_many))
 
         if i >= total_n:
             break

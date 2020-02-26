@@ -9,7 +9,7 @@ import generate
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--algorithm', default='word2vec', choices=['word2vec', 'GloVe'])
-parser.add_argument('--hidden-size', type=int, default=64)
+parser.add_argument('--emb-size', type=int, default=64)
 parser.add_argument('--negative', type=int, default=5)
 parser.add_argument('--skip-gram', action='store_true')
 parser.add_argument('--debug', action='store_true')
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # train the word2vec model
     word2vec.word2vec(ifile, ofile,
-                      size=args.hidden_size,
+                      size=args.emb_size,
                       negative=args.negative,
                       cbow=not args.skip_gram,
                       min_count=1)
