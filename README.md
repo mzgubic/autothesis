@@ -45,6 +45,10 @@ cd ${SRC}/scripts
 python pdf2txt.py
 ```
 
+## Science
+`autothesis` contributed to the following masterpiece in [my thesis](https://ora.ox.ac.uk/objects/uuid:3990bbe9-ae68-4f1a-b225-421533417fb0):
 
+
+### The Inner Detector in the hadronic electrode to the tight distribution of the lead to the converted in the tracks and the summary of the electrons are described for the group the group can be simplified in the tracking to the total to the predictions in the tracks as a constants in the distributions are shown
 
 
